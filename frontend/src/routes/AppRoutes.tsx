@@ -8,6 +8,7 @@ export default function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path={routes.LANDING} element={<LandingPage />} />
+        <Route path={routes.LOGIN} element={<LoginPage />} />
       </Routes>
     </BrowserRouter>
   );

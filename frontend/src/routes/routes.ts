@@ -1,4 +1,5 @@
 export const routes = 
     {
-            LANDING:'/'
+            LANDING:'/',
+            LOGIN:'/login'
     }
