@@ -1,5 +1,4 @@
 import { ReactNode, createContext, useEffect, useState, useContext } from 'react'
-import React from 'react'
 
 interface ThemeContextType {
     theme: string
