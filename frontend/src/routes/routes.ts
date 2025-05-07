@@ -1,5 +1,6 @@
 export const routes = 
     {
             LANDING:'/',
-            LOGIN:'/login'
+            LOGIN:'/login',
+            CADASTRO_EMPRESA: "/cadastroempresa"
     }
