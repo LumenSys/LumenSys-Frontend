@@ -11,8 +11,7 @@ export default function LandingPage() {
           </p>
             <button
             onClick={() => window.location.href = '/CadastroEmpresa'}
-            className="mt-6 bg-secondary text-background px-6 py-3 rounded-lg hover:bg-hoverButton transition"
-            >
+            className="mt-6 bg-secondary text-background px-6 py-3 rounded-lg hover:bg-hoverButton transition">
             Começar agora 
             </button>
         </div>
