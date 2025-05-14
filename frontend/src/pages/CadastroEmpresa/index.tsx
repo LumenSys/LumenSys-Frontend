@@ -30,9 +30,12 @@ const FormElementInput = () => {
 
   return (
     <section className="py-12 dark:bg-dark flex items-center justify-center min-h-screen">
-     <div className="container max-w-2xl mx-auto"> {/* Alterado de max-w-lg para max-w-2xl */}
-        <form className="flex flex-col gap-4 bg-white dark:bg-dark-2 p-8 rounded-lg shadow-md"> 
-          <h2 className="text-2xl font-bold text-center mb-4 text-textPrimary">Cadastro de Empresa</h2>
+      <div className="container max-w-5xl mx-auto"> {/* Aumentamos o tamanho do container */}
+        <form className="grid grid-cols-2 gap-x-8 gap-y-6 bg-white dark:bg-dark-2 p-10 rounded-lg shadow-md">
+          <h2 className="col-span-2 text-3xl font-bold text-center mb-6 text-textPrimary"> {/* Centralizando e ajustando o título */}
+            Cadastro de Empresa
+          </h2>
+
           <DefaultColumn>
             <label className="mb-2 block text-base font-medium text-textPrimary">
               Nome da empresa:
@@ -53,9 +56,9 @@ const FormElementInput = () => {
             )}
           </DefaultColumn>
 
-             <DefaultColumn>
+          <DefaultColumn>
             <label className="mb-2 block text-base font-medium text-textPrimary">
-             Razão Social:
+              Razão Social:
             </label>
             <input
               type="text"
@@ -113,7 +116,7 @@ const FormElementInput = () => {
             )}
           </DefaultColumn>
 
-       
+
           <DefaultColumn>
             <label className="mb-2 block text-base font-medium text-textPrimary">
               Telefone:
@@ -234,8 +237,17 @@ const FormElementInput = () => {
             )}
           </DefaultColumn>
 
+          <div className="col-span-2 w-full mt-6 flex gap-4 justify-end">
+            {/* Botão "Voltar" */}
+            <button
+              type="button"
+              className="w-full bg-red-600 text-background px-6 py-3 rounded-lg hover:bg-red-700 transition"
+              onClick={() => window.location.href = "/"}
+            >
+              Voltar
+            </button>
 
-          <div className="w-full mt-4">
+            {/* Botão "Enviar" */}
             <button
               type="submit"
               className="w-full bg-secondary text-background px-6 py-3 rounded-lg hover:bg-hoverButton transition"
