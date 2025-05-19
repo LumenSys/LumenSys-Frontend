@@ -1,0 +1,40 @@
+@import url("assets/font/Lato.css");
+
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  @layer base {
+    html {
+      --font-size: 10px;
+      font-size: var(--font-size);
+      font-family: 'Lato', sans-serif;
+    } 
+
+    input::-ms-clear, input::-ms-reveal {
+      display: none;
+    }
+
+    input::-ms-clear,
+    input::-ms-reveal {
+      display: none;
+    }
+
+    :root {
+      --color-primary: #87CEDB;
+      --color-secondary: #1E91D6;
+      --color-text-primary: #61677A;
+      --color-text-secondary: #7B8298;
+      
+      --color-hoverButton: #7B8298;
+      --color-surface: #E3F1F9;
+      --color-background: #FCFCFC;
+      --color-danger: #FF4D4F;
+      --color-success: #52C41A;
+      --color-warning: #FAAD14;
+
+    }
+
+  }
+    
+    
