@@ -2,5 +2,7 @@ export const routes =
     {
             LANDING:'/',
             LOGIN:'/login',
-            USERSIGNUP:'/usersignup'
+            USERSIGNUP:'/usersignup',
+            DASHBOARD:'/dashboard',
+            MANAGE_PLANS:'/GerenciarPlanos',
     }

@@ -12,6 +12,8 @@ export const router = createBrowserRouter(
       <Route path={routes.LANDING} element={<LandingPage />} />
       <Route path={routes.LOGIN} element={<LoginPage />} /> 
       <Route path={routes.USERSIGNUP} element={<UserRegistration />} /> 
+      <Route path={routes.DASHBOARD} element={<div>Dashboard Placeholder</div>} />
+      <Route path={routes.MANAGE_PLANS} element={<div>Manage Plans Placeholder</div>} />
     </Route>
   )
 );
