@@ -29,6 +29,10 @@
       --color-hoverButton: #7B8298;
       --color-surface: #E3F1F9;
       --color-background: #FCFCFC;
+      --color-danger: #FF4D4F;
+      --color-success: #52C41A;
+      --color-warning: #FAAD14;
+
     }
 
   }

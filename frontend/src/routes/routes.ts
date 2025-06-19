@@ -5,4 +5,5 @@ export const routes =
             USERSIGNUP:'/usersignup',
             DASHBOARD:'/dashboard',
             MANAGE_PLANS:'/GerenciarPlanos',
+            CADASTRO_EMPRESA: "/cadastroempresa"
     }
