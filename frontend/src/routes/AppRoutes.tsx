@@ -1,18 +1,21 @@
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
 import Layout     from "../components/Layout";
 import LandingPage from "../pages/LandingPage";
+import CadastroEmpresa from "../pages/CadastroEmpresa";
 import { routes } from "./routes";
 import LoginPage from "../pages/LoginPage";
 import UserRegistration from "../pages/Registration/UserRegistration";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
-
+<>
     <Route path="/" element={<Layout />}>
       <Route path={routes.LANDING} element={<LandingPage />} />
       <Route path={routes.LOGIN} element={<LoginPage />} /> 
       <Route path={routes.USERSIGNUP} element={<UserRegistration />} /> 
-    </Route>
+      <Route path={routes.CADASTRO_EMPRESA} element={<CadastroEmpresa />} />
+      </Route>
+</>
   )
 );
 export default function AppRoutes() {
