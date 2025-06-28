@@ -16,7 +16,10 @@ export default function LandingPage() {
       <p className="mt-4 text-sm md:text-base text-textSecondary leading-relaxed">
         Discover how our innovative designs can transform your brand and captivate your audience.
       </p>
-      <button className="mt-6 bg-secondary text-background text-sm md:text-base px-5 py-2 md:px-6 md:py-3 rounded-lg hover:bg-hoverButton transition">
+      <button
+        className="mt-6 bg-secondary text-background text-sm md:text-base px-5 py-2 md:px-6 md:py-3 rounded-lg hover:bg-hoverButton transition"
+        onClick={() => window.location.href = "/CadastroEmpresa"}
+      >
         Começar agora
       </button>
       <a
