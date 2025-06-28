@@ -8,13 +8,17 @@ export default function Header() {
 
   return (
     <header className="w-full bg-primary text-textPrimary shadow-md fixed top-0 z-50">
-      <div className="container mx-auto flex items-center justify-between h-[58px] px-4 md:px-2">
+      <div className="w-full flex items-center justify-between h-[58px] px-4 md:px-16">
+
+
         <div className="order-1">
-          <img src={Logo} alt="Logo" className="h-10 md:h-11 rounded"/>
+          <a href="/">
+            <img src={Logo} alt="Logo" className="h-12 md:h-14 rounded cursor-pointer" />
+          </a>
         </div>
         <div className="flex items-center space-x-2 md:space-x-4 order-2">
           <nav className="hidden md:flex space-x-4 text-sm font-normal">
-            <a href="#" className="hover:text-textSecondary">Home</a>
+            <a href="/dashboard" className="hover:text-textSecondary">Home</a>
             <a href="#" className="hover:text-textSecondary">Our Story</a>
             <a href="#" className="hover:text-textSecondary">Our Team</a>
           </nav>
@@ -25,7 +29,7 @@ export default function Header() {
             Access Account
           </button>
           <button
-            onClick={() => {}}
+            onClick={() => { }}
             className="hidden md:inline-block bg-secondary text-white px-3 py-1.5 rounded text-sm transition hover:bg-hoverSuccess hover:text-textSecondary"
           >
             Join Us

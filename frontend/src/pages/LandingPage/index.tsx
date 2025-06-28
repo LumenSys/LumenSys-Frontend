@@ -1,3 +1,5 @@
+import Landing from "../../assets/images/landing.png";
+
 export default function LandingPage() {
   return (<main
     className="
@@ -16,7 +18,10 @@ export default function LandingPage() {
       <p className="mt-4 text-sm md:text-base text-textSecondary leading-relaxed">
         Discover how our innovative designs can transform your brand and captivate your audience.
       </p>
-      <button className="mt-6 bg-secondary text-background text-sm md:text-base px-5 py-2 md:px-6 md:py-3 rounded-lg hover:bg-hoverButton transition">
+      <button
+        className="mt-6 bg-secondary text-background text-sm md:text-base px-5 py-2 md:px-6 md:py-3 rounded-lg hover:bg-hoverButton transition"
+        onClick={() => window.location.href = "/CadastroEmpresa"}
+      >
         Começar agora
       </button>
       <a
@@ -27,7 +32,13 @@ export default function LandingPage() {
       </a>
       </div>
       <div className="flex justify-center">
-      <div className="w-full h-64 md:h-80 bg-gray-200 rounded-lg"></div>
+        <div className="flex justify-center items-center">
+          <img
+            src={Landing}
+            alt="Ilustração de dashboard"
+            className="max-w-full h-auto md:h-[420px]"
+          />
+        </div>
       </div>
     </div>
   </main>
