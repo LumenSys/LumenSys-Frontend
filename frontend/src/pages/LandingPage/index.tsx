@@ -1,3 +1,5 @@
+import Landing from "../../assets/images/landing.png";
+
 export default function LandingPage() {
   return (<main
     className="
@@ -30,7 +32,13 @@ export default function LandingPage() {
       </a>
       </div>
       <div className="flex justify-center">
-      <div className="w-full h-64 md:h-80 bg-gray-200 rounded-lg"></div>
+        <div className="flex justify-center items-center">
+          <img
+            src={Landing}
+            alt="Ilustração de dashboard"
+            className="max-w-full h-auto md:h-[420px]"
+          />
+        </div>
       </div>
     </div>
   </main>
