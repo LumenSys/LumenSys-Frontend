@@ -26,9 +26,10 @@
       --color-text-primary: #61677A;
       --color-text-secondary: #7B8298;
       --color-footer:#E3F1F9;
+      --color-white:white;
 
       --color-hoverButton: #7B8298;
-      --color-surface: #EBEBEB;
+      --color-surface: #FFFFFF;
       --color-background: #FCFCFC;
       --color-danger: #FF4D4F;
       --color-success: #52C41A;

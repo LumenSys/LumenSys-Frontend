@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import InputField from '../../components/Input/InputField';
 
 const initialFields = {
   nomeEmpresa: "",
@@ -29,27 +30,23 @@ const FormElementInput = () => {
   const isFilled = (key: keyof typeof initialFields) => fields[key] && touched[key];
 
   return (
-    <section className="py-12 dark:bg-dark flex items-center justify-center min-h-screen">
-      <div className="container max-w-5xl mx-auto"> {/* Aumentamos o tamanho do container */}
-        <form className="grid grid-cols-2 gap-x-8 gap-y-6 bg-white dark:bg-dark-2 p-10 rounded-lg shadow-md">
-          <h2 className="col-span-2 text-3xl font-bold text-center mb-6 text-textPrimary"> {/* Centralizando e ajustando o título */}
+    <section className="py-12 flex items-center justify-center min-h-screen bg-background">
+      <div className="container max-w-5xl mx-auto">
+        <form className="grid grid-cols-2 gap-x-8 gap-y-6 bg-surface p-10 rounded-lg shadow-md">
+          <h2 className="col-span-2 text-3xl font-bold text-center mb-6 text-textPrimary">
             Cadastro de Empresa
           </h2>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Nome da empresa:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="Nome da empresa:"
               name="nomeEmpresa"
               placeholder="Digite o nome da empresa"
               value={fields.nomeEmpresa}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("nomeEmpresa") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("nomeEmpresa") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -57,19 +54,15 @@ const FormElementInput = () => {
           </DefaultColumn>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Razão Social:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="Razão Social:"
               name="razaoSocial"
               placeholder="Razão Social"
               value={fields.razaoSocial}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("razaoSocial") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("razaoSocial") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -77,19 +70,15 @@ const FormElementInput = () => {
           </DefaultColumn>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              CNPJ:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="CNPJ:"
               name="cnpj"
               placeholder="Digite o CNPJ da empresa"
               value={fields.cnpj}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("cnpj") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("cnpj") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -97,40 +86,32 @@ const FormElementInput = () => {
           </DefaultColumn>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Email:
-            </label>
-            <input
-              type="email"
+            <InputField
+              label="Email:"
               name="email"
+              type="email"
               placeholder="Digite o email da empresa"
               value={fields.email}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("email") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("email") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
           </DefaultColumn>
 
-
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Telefone:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="Telefone:"
               name="telefone"
               placeholder="(99) 99999-9999"
               value={fields.telefone}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("telefone") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("telefone") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -138,19 +119,15 @@ const FormElementInput = () => {
           </DefaultColumn>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Cidade:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="Cidade:"
               name="cidade"
               placeholder="Digite sua cidade"
               value={fields.cidade}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("cidade") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("cidade") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -158,19 +135,15 @@ const FormElementInput = () => {
           </DefaultColumn>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Rua:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="Rua:"
               name="rua"
               placeholder="Digite sua rua"
               value={fields.rua}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("rua") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("rua") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -178,19 +151,15 @@ const FormElementInput = () => {
           </DefaultColumn>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Bairro:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="Bairro:"
               name="bairro"
               placeholder="Digite seu bairro"
               value={fields.bairro}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("bairro") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("bairro") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -198,19 +167,15 @@ const FormElementInput = () => {
           </DefaultColumn>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Número:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="Número:"
               name="numero"
               placeholder="Digite o número"
               value={fields.numero}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("numero") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("numero") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -218,19 +183,15 @@ const FormElementInput = () => {
           </DefaultColumn>
 
           <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              UF:
-            </label>
-            <input
-              type="text"
+            <InputField
+              label="UF:"
               name="uf"
               placeholder="Digite sua UF"
               value={fields.uf}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("uf") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
+              required
+              className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("uf") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
@@ -250,7 +211,7 @@ const FormElementInput = () => {
             {/* Botão "Enviar" */}
             <button
               type="submit"
-              className="w-full bg-secondary text-background px-6 py-3 rounded-lg hover:bg-hoverButton transition"
+              className="w-full bg-primary text-background px-6 py-3 rounded-lg hover:bg-secondary transition"
             >
               Enviar
             </button>

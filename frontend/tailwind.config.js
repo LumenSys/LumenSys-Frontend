@@ -20,6 +20,7 @@ export default {
         surface: 'var(--color-surface)',
         surfaceUser: 'var(--color-surface-user)',
         hoverButton: 'var(--color-hoverButton)',
+        whiteColor: 'var(--color-white)',
 
         danger: 'var(--color-danger)',
         hoverDanger: 'var(--color-hoverDanger)',

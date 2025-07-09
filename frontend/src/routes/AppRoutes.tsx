@@ -7,6 +7,7 @@ import LoginPage from "../pages/LoginPage";
 import UserRegistration from "../pages/Registration/UserRegistration";
 import DashBoard from "../pages/DashBoard";
 import GerenciarPlanos from "../pages/GerenciarPlanos";
+import NotFound from "../pages/NotFound";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -18,6 +19,7 @@ export const router = createBrowserRouter(
       <Route path={routes.DASHBOARD} element={<DashBoard />} />
       <Route path={routes.MANAGE_PLANS} element={<GerenciarPlanos />} />
       <Route path={routes.CADASTRO_EMPRESA} element={<CadastroEmpresa />} />
+      <Route path="*" element={<NotFound />} />
       </Route>
 </>
   )
