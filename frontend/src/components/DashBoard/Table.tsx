@@ -55,7 +55,7 @@ export default function GenericTable<T>({
             {actions.map((action, index) => (
               <button
                 key={index}
-                className={`px-4 py-2 bg-primary text-background rounded hover:bg-secondary transition ${action.className || ''}`}
+                className={`px-4 py-2 bg-primary text-background rounded hover:bg-secondary transition ${action.className || ''} hover:text-whiteColor`}
                 onClick={action.onClick}
               >
                 {action.label}
