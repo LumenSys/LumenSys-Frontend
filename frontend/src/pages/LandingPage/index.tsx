@@ -12,14 +12,14 @@ export default function LandingPage() {
             Discover how our innovative designs can transform your brand and captivate your audience.
           </p>
           <button
-            className="mt-6 bg-secondary text-background text-sm md:text-base px-5 py-2 md:px-6 md:py-3 rounded-lg hover:bg-hoverButton transition"
+            className="mt-6 bg-secondary text-background text-sm md:text-base px-5 py-2 md:px-6 md:py-3 rounded-lg hover:bg-hoverButton2 transition"
             onClick={() => window.location.href = "/cadastroempresa"}
           >
             Começar agora
           </button>
           <a
             href="/dashboard"
-            className="inline-block mt-4 ml-4 bg-primary text-background text-sm md:text-base px-5 py-2 md:px-6 md:py-3 rounded-lg hover:bg-hoverButton transition"
+            className="inline-block mt-4 ml-4 bg-primary text-background text-sm md:text-base px-5 py-2 md:px-6 md:py-3 rounded-lg hover:bg-hoverButton2 transition"
           >
             Ir para Dashboard
           </a>

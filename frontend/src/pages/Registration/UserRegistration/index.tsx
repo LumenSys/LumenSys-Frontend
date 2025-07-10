@@ -75,7 +75,7 @@ export default function UserRegistration() {
           <button
             type="button"
             className="text-primary underline hover:text-secondary"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/login')}
           >
             Faça login
           </button>

@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from 'react';
 import GenericTable from '../../components/DashBoard/Table';
 import { Edit2 } from 'lucide-react';
+import Breadcrumb from '../../components/Breadcrumb';
 
 interface Plano {
   nome: string;
@@ -64,8 +65,9 @@ export default function GerenciarPlanos() {
 
   return (
     <div className="min-h-screen bg-background p-8 pt-16">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-textPrimary mb-2">Planos</h1>
+      <div>
+        <Breadcrumb />
+        <h1 className="text-3xl font-bold text-textPrimary pt-2 mb-2">Planos</h1>
       </div>
       <div className="bg-surface rounded-lg shadow p-6">
         <div className="flex flex-row items-center justify-between mb-4 gap-4">

@@ -3,6 +3,7 @@ import { StatCard } from '../../components/DashBoard/Cards';
 import GenericTable from '../../components/DashBoard/Table';
 import Pagination from '../../components/DashBoard/Pagination';
 import { Users, CheckCircle, Ban, Plus, Edit2 } from 'lucide-react';
+import Breadcrumb from '../../components/Breadcrumb';
 
 interface ContractData {
     name: string;
@@ -86,7 +87,8 @@ const DashBoard: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-background p-8 pt-16">
-            <div className="mb-8">
+            <div>
+                <Breadcrumb />
                 <h1 className="text-3xl font-bold text-textPrimary mb-2">Seja bem-vindo!</h1>
                 <p className="text-lg text-textSecondary">Gerencie seus serviços e planos funerários</p>
             </div>

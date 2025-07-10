@@ -1,3 +1,4 @@
+import React from "react";
 import { useNavigate, useLocation } from 'react-router-dom'
 import { routes } from '../../routes/routes'
 import Logo from '../../assets/images/logo.png'
@@ -18,7 +19,7 @@ export default function Header() {
       <div className="w-full flex items-center justify-between h-[58px] px-4 md:px-16">
 
 
-        <div className="order-1">
+        <div className="order-1 ml-0 md:ml-[-32px]">
           <a href="/">
             <img src={Logo} alt="Logo" className="h-12 md:h-14 rounded cursor-pointer" />
           </a>
