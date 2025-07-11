@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ApiService from '../../../services/apiService';
+import InputField from '../../../components/Input/InputField';
 
 export default function UserRegistration() {
   const [name, setName] = useState('');
@@ -22,43 +23,45 @@ export default function UserRegistration() {
       );
 
       alert('Usuário cadastrado com sucesso!');
-      navigate('/');
+      navigate('/dahboard');
     } catch (err) {
       console.error('Cadastro falhou:', err);
       alert('Erro ao cadastrar. Tente novamente.');
     }
   }
-
+      
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <section className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-center mb-6">
+        <h1 className="text-2xl font-semibold text-center mb-6 text-textPrimary">
           Cadastro de Usuário
         </h1>
         <form onSubmit={handleRegister} className="space-y-4">
-          <input
-            type="text"
+          <InputField
+            name="name"
             placeholder="Nome"
             value={name}
             onChange={e => setName(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:outline-none"
+            className="focus:ring-primary text-textPrimary bg-background"
           />
-          <input
+          <InputField
+            name="email"
             type="email"
             placeholder="Email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:outline-none"
+            className="focus:ring-primary text-textPrimary bg-background"
           />
-          <input
+          <InputField
+            name="password"
             type="password"
             placeholder="Senha"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:outline-none"
+            className="focus:ring-primary text-textPrimary bg-background"
           />
           <button
             type="submit"
@@ -72,7 +75,7 @@ export default function UserRegistration() {
           <button
             type="button"
             className="text-primary underline hover:text-secondary"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/login')}
           >
             Faça login
           </button>
