@@ -8,9 +8,6 @@ export default function LandingPage() {
         <div className="space-y-8">
           <div className="space-y-6">
             <div className="inline-flex items-center px-4 py-2 bg-secondary/10 rounded-full">
-              <span className="text-secondary text-sm font-medium">
-                ✨ Solução Empresarial Completa
-              </span>
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold text-textPrimary leading-tight">
@@ -74,7 +71,7 @@ export default function LandingPage() {
           <div className="relative">
             
             {/* Container da imagem */}
-            <div className="relative bg-white p-4 rounded-2xl">
+            <div className="relative p-4 rounded-2xl">
               <img
                 src={Landing}
                 alt="Dashboard da plataforma LumenSys mostrando interface moderna e intuitiva"
