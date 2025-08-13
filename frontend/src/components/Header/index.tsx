@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from 'react-router-dom'
 import { routes } from '../../routes/routes'
 import Logo from '../../assets/images/logo.png'
@@ -6,6 +6,8 @@ import Logo from '../../assets/images/logo.png'
 export default function Header() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  
   const handleLoginClick = () => navigate(routes.LOGIN)
   const handleJoinClick = () => navigate(routes.USERSIGNUP)
 
@@ -14,47 +16,173 @@ export default function Header() {
   const showAuthButtons = [routes.LANDING, routes.LOGIN, routes.USERSIGNUP].includes(location.pathname) && !isNotFound;
   const showNavLinks = ![routes.LANDING, routes.LOGIN, routes.USERSIGNUP].includes(location.pathname) && !isNotFound;
 
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
+
   return (
-    <header className="w-full bg-primary text-textPrimary shadow-md fixed top-0 z-50">
-      <div className="w-full flex items-center justify-between h-[58px] px-4 md:px-16">
+    <>
+      <header className="w-full bg-white/95 backdrop-blur-md border-b border-gray-100 text-textPrimary shadow-sm fixed top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-6">
+          {/* Logo */}
+          <div className="flex items-center">
+            <a href="/" className="flex items-center space-x-3 group">
+              <div className="relative">
+                <img 
+                  src={Logo} 
+                  alt="LumenSys Logo" 
+                  className="h-10 w-auto rounded-lg transition-transform duration-300 group-hover:scale-105" 
+                />
+              </div>
+              <span className="text-xl font-bold text-gray-800 hidden sm:block">
+                LumenSys
+              </span>
+            </a>
+          </div>
 
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {showNavLinks && (
+              <nav className="flex space-x-6">
+                <a 
+                  href="/dashboard" 
+                  className="text-gray-700 hover:text-secondary font-medium transition-colors duration-200 relative group"
+                >
+                  Dashboard
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-secondary transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a 
+                  href="#" 
+                  className="text-gray-700 hover:text-secondary font-medium transition-colors duration-200 relative group"
+                >
+                  Nossa História
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-secondary transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a 
+                  href="#" 
+                  className="text-gray-700 hover:text-secondary font-medium transition-colors duration-200 relative group"
+                >
+                  Equipe
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-secondary transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a 
+                  href="#" 
+                  className="text-gray-700 hover:text-secondary font-medium transition-colors duration-200 relative group"
+                >
+                  Contato
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-secondary transition-all duration-300 group-hover:w-full"></span>
+                </a>
+              </nav>
+            )}
 
-        <div className="order-1 ml-0 md:ml-[-32px]">
-          <a href="/">
-            <img src={Logo} alt="Logo" className="h-12 md:h-14 rounded cursor-pointer" />
-          </a>
-        </div>
-        <div className="flex items-center space-x-2 md:space-x-4 order-2">
-          {showNavLinks && (
-            <nav className="hidden md:flex space-x-4 text-sm font-normal">
-              <a href="/dashboard" className="hover:text-textSecondary">Home</a>
-              <a href="#" className="hover:text-textSecondary">Our Story</a>
-              <a href="#" className="hover:text-textSecondary">Our Team</a>
-            </nav>
-          )}
-          {showAuthButtons && (
-            <>
-              <button
-                onClick={handleLoginClick}
-                className="hidden md:inline-block bg-surface px-3 py-1.5 border border-textSecondary text-textSecondary rounded text-sm transition hover:bg-neutralLighter"
-              >
-                Access Account
-              </button>
-              <button
-                onClick={handleJoinClick}
-                className="hidden md:inline-block bg-secondary text-whiteColor px-3 py-1.5 rounded text-sm transition hover:bg-hoverSuccess hover:text-textSecondary"
-              >
-                Join Us
-              </button>
-            </>
-          )}
+            {showAuthButtons && (
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleLoginClick}
+                  className="px-4 py-2 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                >
+                  Fazer Login
+                </button>
+                <button
+                  onClick={handleJoinClick}
+                  className="px-4 py-2 bg-secondary text-white font-medium rounded-lg hover:bg-hoverButton2 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Começar Agora
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
           {!isNotFound && (
-            <button className="md:hidden text-xl leading-none">
-              ☰
+            <button 
+              onClick={toggleMobileMenu}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            >
+              <svg 
+                className={`w-6 h-6 transition-transform duration-300 ${isMobileMenuOpen ? 'rotate-90' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} 
+                />
+              </svg>
             </button>
           )}
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && !isNotFound && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            onClick={toggleMobileMenu}
+          ></div>
+          <div className="fixed top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg">
+            <div className="px-6 py-4 space-y-4">
+              {showNavLinks && (
+                <nav className="space-y-3">
+                  <a 
+                    href="/dashboard" 
+                    className="block text-gray-700 hover:text-secondary font-medium py-2 border-b border-gray-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Dashboard
+                  </a>
+                  <a 
+                    href="#" 
+                    className="block text-gray-700 hover:text-secondary font-medium py-2 border-b border-gray-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Nossa História
+                  </a>
+                  <a 
+                    href="#" 
+                    className="block text-gray-700 hover:text-secondary font-medium py-2 border-b border-gray-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Equipe
+                  </a>
+                  <a 
+                    href="#" 
+                    className="block text-gray-700 hover:text-secondary font-medium py-2"
+                    onClick={toggleMobileMenu}
+                  >
+                    Contato
+                  </a>
+                </nav>
+              )}
+
+              {showAuthButtons && (
+                <div className="pt-4 space-y-3 border-t border-gray-200 flex flex-col items-start">
+                  <button
+                  onClick={() => {
+                    handleLoginClick()
+                    toggleMobileMenu()
+                  }}
+                  className="px-4 py-3 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 w-auto"
+                  >
+                  Fazer Login
+                  </button>
+                  <button
+                  onClick={() => {
+                    handleJoinClick()
+                    toggleMobileMenu()
+                  }}
+                  className="px-4 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-hoverButton2 transition-colors duration-200 w-auto mt-2"
+                  >
+                  Começar Agora
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
