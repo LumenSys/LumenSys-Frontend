@@ -33,7 +33,7 @@ export default function LoginPage() {
         localStorage.removeItem('remember');
       }
 
-      navigate('/dahboard');
+      navigate('/dashboard');
     } catch (err) {
       console.error('Login falhou:', err);
       alert('Falha ao realizar o login. Verifique suas credenciais.');

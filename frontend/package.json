@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.8",
+    "@types/antd": "^0.12.32",
     "axios": "^1.7.7",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.525.0",
