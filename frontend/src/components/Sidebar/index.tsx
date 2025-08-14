@@ -3,7 +3,7 @@ import { Building2, FileText, Heart, Users, BarChart3 } from 'lucide-react';
 
 const menuItems = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-  { to: '/listacompanhias', label: 'Empresas', icon: Building2 },
+  { to: '/listaempresas', label: 'Empresas', icon: Building2 },
   { to: '/GerenciarPlanos', label: 'Planos', icon: FileText },
   { to: '/servicos', label: 'Serviços', icon: Heart },
   { to: '/contratos', label: 'Contratos', icon: Users },

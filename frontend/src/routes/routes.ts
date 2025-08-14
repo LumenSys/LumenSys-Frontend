@@ -6,5 +6,5 @@ export const routes =
             DASHBOARD:'/dashboard',
             MANAGE_PLANS:'/GerenciarPlanos',
             CADASTRO_EMPRESA: "/cadastroempresa",
-            LIST_COMPANIES: "/listacompanias"
+            LIST_COMPANIES: "/listaempresas"
     }
