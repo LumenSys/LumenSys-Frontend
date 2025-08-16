@@ -9,6 +9,7 @@ import DashBoard from "../pages/DashBoard";
 import GerenciarPlanos from "../pages/GerenciarPlanos";
 import NotFound from "../pages/NotFound";
 import ListOfCompanies from "../pages/Listofcompanies";
+import Servicos from "../pages/Servicos";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -21,6 +22,7 @@ export const router = createBrowserRouter(
       <Route path={routes.MANAGE_PLANS} element={<GerenciarPlanos />} />
       <Route path={routes.CADASTRO_EMPRESA} element={<CadastroEmpresa />} />
       <Route path={routes.LIST_COMPANIES} element={<ListOfCompanies />} />
+      <Route path={routes.SERVICOS} element={<Servicos />} />
       <Route path="*" element={<NotFound />} />
       </Route>
 </>
