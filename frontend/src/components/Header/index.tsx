@@ -23,25 +23,25 @@ export default function Header() {
       <header className="w-full bg-white/95 backdrop-blur-md border-b border-gray-100 text-textPrimary shadow-sm fixed top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-20 px-8">
           {/* Logo */}
-          <div className="flex items-center">
-            <a href="/" className="flex items-center space-x-4 group">
+            <div className="flex items-center justify-start flex-1 mr-16">
+              <a href="/" className="flex items-center space-x-4 group">
               <div className="relative">
                 <img 
-                  src={Logo} 
-                  alt="LumenSys Logo" 
-                  className="h-12 w-auto rounded-lg transition-transform duration-300 group-hover:scale-105" 
+                src={Logo} 
+                alt="LumenSys Logo" 
+                className="h-16 w-auto rounded-lg transition-transform duration-300 group-hover:scale-105" 
                 />
               </div>
               <span className="text-2xl font-bold text-gray-800 hidden sm:block">
                 LumenSys
               </span>
-            </a>
-          </div>
+              </a>
+            </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center ">
+          <div className="hidden md:flex items-center flex-1 justify-end">
             {showNavLinks && (
-              <nav className="flex space-x-10">
+              <nav className="flex space-x-10 mr-8">
                 <a 
                   href="/dashboard" 
                   className="text-gray-700 hover:text-secondary font-medium transition-colors duration-200 relative group px-2 py-3"
@@ -74,7 +74,7 @@ export default function Header() {
             )}
 
             {showAuthButtons && (
-              <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-6 ml-8">
                 <button
                   onClick={handleLoginClick}
                   className="px-6 py-3 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
