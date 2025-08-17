@@ -7,5 +7,6 @@ export const routes =
             MANAGE_PLANS:'/GerenciarPlanos',
             CADASTRO_EMPRESA: "/cadastroempresa",
             LIST_COMPANIES: "/listaempresas",
-            SERVICOS: "/servicos"
+            SERVICOS: "/servicos",
+            CONTRATOS: "/contratos"
     }

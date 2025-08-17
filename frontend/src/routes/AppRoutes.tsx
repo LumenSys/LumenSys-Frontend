@@ -10,6 +10,7 @@ import GerenciarPlanos from "../pages/GerenciarPlanos";
 import NotFound from "../pages/NotFound";
 import ListOfCompanies from "../pages/Listofcompanies";
 import Servicos from "../pages/Servicos";
+import ContratosPage from "../pages/Contratos";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -23,6 +24,7 @@ export const router = createBrowserRouter(
       <Route path={routes.CADASTRO_EMPRESA} element={<CadastroEmpresa />} />
       <Route path={routes.LIST_COMPANIES} element={<ListOfCompanies />} />
       <Route path={routes.SERVICOS} element={<Servicos />} />
+      <Route path={routes.CONTRATOS} element={<ContratosPage />} />
       <Route path="*" element={<NotFound />} />
       </Route>
 </>
