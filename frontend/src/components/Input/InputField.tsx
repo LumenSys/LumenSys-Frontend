@@ -11,6 +11,7 @@ type InputFieldProps = {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  maxLength?: number;
   required?: boolean;
   className?: string;
 };
@@ -23,6 +24,7 @@ const InputField: React.FC<InputFieldProps> = ({
   value,
   onChange,
   onBlur,
+  maxLength,
   required = false,
   className = '',
 }) => {
@@ -43,6 +45,7 @@ const InputField: React.FC<InputFieldProps> = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        maxLength={maxLength} 
         required={required}
         className={`w-full px-4 py-2 border rounded focus:ring-primary focus:outline-none ${className} ${isPassword ? 'pr-10' : ''}`}
       />

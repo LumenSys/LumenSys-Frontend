@@ -89,7 +89,10 @@ const ListOfCompanies: React.FC = () => {
                                 className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             />
                         </div>
-                        <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                        <button
+                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            onClick={() => window.location.href = "/CadastroEmpresa"}
+                        >
                             + Nova Empresa
                         </button>
                     </div>
