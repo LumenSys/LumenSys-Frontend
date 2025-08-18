@@ -147,7 +147,7 @@ const CadastroEmpresa = () => {
         phone: fields.phone.replace(/\D/g, ''),
       };
 
-      await api.post('api/companies', companyData);
+      await api.post('api/v1/Company', companyData);
 
       setSuccess(true);
       setFields(initialFields);
