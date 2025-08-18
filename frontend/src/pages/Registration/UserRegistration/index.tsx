@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ApiService from '../../../services/apiService';
 import InputField from '../../../components/Input/InputField';
 
@@ -8,79 +7,102 @@ export default function UserRegistration() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const api = ApiService();
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-
+    setLoading(true);
     try {
-      await axios.post(
-        api.appendRoute('api/user'),
-        { name, email, password },
-        api.headerConfig()
-      );
-
+      await api.post('api/user', { name, email, password });
       alert('Usuário cadastrado com sucesso!');
-      navigate('/dahboard');
-    } catch (err) {
+      navigate('/dashboard');
+    } catch (err: any) {
       console.error('Cadastro falhou:', err);
-      alert('Erro ao cadastrar. Tente novamente.');
+      alert(err.response?.data?.message || 'Erro ao cadastrar. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   }
-      
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <section className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-center mb-6 text-textPrimary">
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+    }}>
+      <form
+        onSubmit={handleRegister}
+        style={{
+          background: '#fff',
+          padding: '2.5rem 2rem',
+          borderRadius: '12px',
+          boxShadow: '0 8px 32px rgba(60,60,120,0.15)',
+          minWidth: 340,
+          width: '100%',
+          maxWidth: 400,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.2rem'
+        }}
+      >
+        <h2 style={{
+          textAlign: 'center',
+          marginBottom: '1rem',
+          color: '#2d3748',
+          fontWeight: 700,
+          letterSpacing: 1
+        }}>
           Cadastro de Usuário
-        </h1>
-        <form onSubmit={handleRegister} className="space-y-4">
-          <InputField
-            name="name"
-            placeholder="Nome"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            required
-            className="focus:ring-primary text-textPrimary bg-background"
-          />
-          <InputField
-            name="email"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            className="focus:ring-primary text-textPrimary bg-background"
-          />
-          <InputField
-            name="password"
-            type="password"
-            placeholder="Senha"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            className="focus:ring-primary text-textPrimary bg-background"
-          />
-          <button
-            type="submit"
-            className="w-full bg-primary text-white py-2 rounded-md hover:bg-secondary transition"
-          >
-            Cadastrar
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm text-textSecondary">
-          Já possui conta?{' '}
-          <button
-            type="button"
-            className="text-primary underline hover:text-secondary"
-            onClick={() => navigate('/login')}
-          >
-            Faça login
-          </button>
-        </p>
-      </section>
+        </h2>
+        <InputField
+          label="Nome"
+          name="name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+        />
+        <InputField
+          label="Email"
+          name="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+        <InputField
+          label="Senha"
+          name="password"
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            marginTop: '1rem',
+            padding: '0.75rem',
+            borderRadius: '8px',
+            border: 'none',
+            background: loading ? '#a0aec0' : 'linear-gradient(90deg, #667eea 0%, #5a67d8 100%)',
+            color: '#fff',
+            fontWeight: 600,
+            fontSize: '1rem',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'background 0.2s'
+          }}
+        >
+          {loading ? 'Cadastrando...' : 'Cadastrar'}
+        </button>
+        <div style={{ textAlign: 'center', marginTop: '0.5rem', color: '#718096', fontSize: 14 }}>
+          Já possui uma conta? <a href="/login" style={{ color: '#5a67d8', textDecoration: 'none', fontWeight: 500 }}>Entrar</a>
+        </div>
+      </form>
     </div>
   );
 }

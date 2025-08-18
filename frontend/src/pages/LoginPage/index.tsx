@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ApiService from '../../services/apiService';
 import InputField from '../../components/Input/InputField';
+import Cookies from 'js-cookie';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,13 +18,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        api.appendRoute('api/user/login'),
-        { email, password },
-        api.headerConfig()
-      );
+      const response = await api.post('api/user/login', { email, password });
 
-      localStorage.setItem('token', response.data.token);
+      const token = response.data.token;
+
+      // Armazenar token no cookie
+      Cookies.set('token', token, { expires: rememberMe ? 7 : undefined });
+
+      // Armazenar email no localStorage (opcional)
       localStorage.setItem('email', email);
 
       if (rememberMe) {
@@ -34,13 +35,45 @@ export default function LoginPage() {
       }
 
       navigate('/dashboard');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login falhou:', err);
-      alert('Falha ao realizar o login. Verifique suas credenciais.');
+      alert(err.response?.data?.message || 'Falha ao realizar o login. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }
   }
+
+  return (
+    <form onSubmit={handleLogin}>
+      <h2>Login</h2>
+      <InputField
+        label="Email"
+        name="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        required
+      />
+      <InputField
+        label="Senha"
+        name="password"
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        required
+      />
+      <label>
+        <input
+          type="checkbox"
+          checked={rememberMe}
+          onChange={e => setRememberMe(e.target.checked)}
+        />
+        Lembrar-me
+      </label>
+      <button type="submit" disabled={loading}>
+        {loading ? 'Entrando...' : 'Entrar'}
+      </button>
+    </form>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
