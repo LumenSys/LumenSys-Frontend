@@ -8,8 +8,8 @@ import Landing from './pages/LandingPage';
 import GerenciarPlanos from './pages/GerenciarPlanos';
 import DashBoard from './pages/DashBoard';
 import Servicos from './pages/Servicos';
+import Contratos from './pages/Contratos';
 import Sidebar from './components/Sidebar';
-
 
 
 function App() {
@@ -28,6 +28,7 @@ function App() {
               <Route path="/gerenciarplanos" element={<GerenciarPlanos />} />
               <Route path="/dashboard" element={<DashBoard />} />
               <Route path="/servicos" element={<Servicos />} />
+              <Route path="/contratos" element={<Contratos/>} />
             </Routes>
           </main>
         </div>
