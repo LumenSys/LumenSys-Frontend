@@ -19,13 +19,9 @@ export default function LoginPage() {
 
     try {
       const response = await api.post('api/user/login', { email, password });
-
       const token = response.data.token;
 
-      // Armazenar token no cookie
       Cookies.set('token', token, { expires: rememberMe ? 7 : undefined });
-
-      // Armazenar email no localStorage (opcional)
       localStorage.setItem('email', email);
 
       if (rememberMe) {
@@ -44,44 +40,12 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleLogin}>
-      <h2>Login</h2>
-      <InputField
-        label="Email"
-        name="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        required
-      />
-      <InputField
-        label="Senha"
-        name="password"
-        type="password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        required
-      />
-      <label>
-        <input
-          type="checkbox"
-          checked={rememberMe}
-          onChange={e => setRememberMe(e.target.checked)}
-        />
-        Lembrar-me
-      </label>
-      <button type="submit" disabled={loading}>
-        {loading ? 'Entrando...' : 'Entrar'}
-      </button>
-    </form>
-  );
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <section className="bg-surface shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-center mb-6 text-textPrimary">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-background">
+      <section className="bg-surface shadow-2xl rounded-2xl p-10 w-full max-w-md border border-primary/10">
+        <h1 className="text-3xl font-bold text-center mb-8 text-primary drop-shadow">
           Login de Usuário
         </h1>
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-6">
           <InputField
             name="email"
             type="email"
@@ -100,7 +64,6 @@ export default function LoginPage() {
             required
             className="focus:ring-primary text-textPrimary bg-background"
           />
-
           <div className="flex items-center">
             <input
               id="remember"
@@ -109,24 +72,23 @@ export default function LoginPage() {
               onChange={() => setRememberMe(!rememberMe)}
               className="w-4 h-4 text-primary bg-surface rounded focus:ring-primary focus:ring-2"
             />
-            <label htmlFor="remember" className="ml-2 text-sm text-textSecondary">
+            <label htmlFor="remember" className="ml-2 text-sm text-textSecondary select-none">
               Lembrar-me
             </label>
           </div>
-
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-background py-2 rounded-md hover:bg-secondary transition"
+            className="w-full bg-primary text-background py-2 rounded-md font-semibold shadow hover:bg-secondary transition-colors duration-200"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-textSecondary">
+        <p className="mt-6 text-center text-sm text-textSecondary">
           Ainda não tem conta?{' '}
           <button
             type="button"
-            className="text-primary underline hover:text-secondary"
+            className="text-primary underline hover:text-secondary font-medium"
             onClick={() => navigate('/usersignup')}
           >
             Cadastre-se
