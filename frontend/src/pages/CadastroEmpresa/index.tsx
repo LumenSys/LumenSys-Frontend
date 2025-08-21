@@ -1,10 +1,9 @@
-// src/pages/CadastroEmpresa/index.tsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
 import InputField from '../../components/Input/InputField';
-import { useCompanies } from '../../context/CompanyContext';
+import ApiService from '../../services/apiService';
 import Cookies from 'js-cookie';
 
+// Tipo baseado no modelo Company da API
 type CompanyData = {
   cpfCnpj: string;
   name: string;
@@ -32,9 +31,9 @@ const initialFields: CompanyData = {
 };
 
 const CadastroEmpresa = () => {
-  const navigate = useNavigate();
-  const { addCompany } = useCompanies();
-
+  const api = ApiService();
+  
+  // 📝 Carregar dados salvos dos cookies ao inicializar
   const [fields, setFields] = useState<CompanyData>(() => {
     const savedData = Cookies.get('companyFormData');
     if (savedData) {
@@ -47,30 +46,59 @@ const CadastroEmpresa = () => {
     }
     return initialFields;
   });
-
+  
   const [touched, setTouched] = useState<{ [K in keyof CompanyData]?: boolean }>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Salvar dados no cookie sempre que os campos mudarem
+  // 💾 Salvar dados no cookie sempre que os campos mudarem
   useEffect(() => {
     const hasData = Object.values(fields).some(value => value.trim() !== "");
-
+    
     if (hasData) {
-      Cookies.set('companyFormData', JSON.stringify(fields), {
-        expires: 1,
-        secure: true,
-        sameSite: 'strict'
+      // Salvar dados no cookie por 24 horas
+      Cookies.set('companyFormData', JSON.stringify(fields), { 
+        expires: 1, // 1 dia
+        secure: true, // Usar HTTPS em produção
+        sameSite: 'strict' // Proteção CSRF
       });
     } else {
+      // Remover cookie se todos os campos estiverem vazios
       Cookies.remove('companyFormData');
     }
   }, [fields]);
 
+  // 🕒 Controlar sessão do usuário
+  useEffect(() => {
+    // Registrar quando o usuário visitou esta página
+    Cookies.set('lastVisitedPage', 'cadastro-empresa', { expires: 7 });
+    Cookies.set('lastActivity', new Date().toISOString(), { expires: 1 });
+
+    // Verificar se há um token de autenticação
+    const authToken = Cookies.get('authToken');
+    if (!authToken) {
+      console.warn('⚠️ Usuário não autenticado');
+      // Opcional: redirecionar para login
+      // window.location.href = '/login';
+    }
+
+    // Carregar preferências do usuário
+    const userPreferences = Cookies.get('userPreferences');
+    if (userPreferences) {
+      try {
+        const prefs = JSON.parse(userPreferences);
+        console.log('Preferências do usuário:', prefs);
+      } catch (error) {
+        console.error('Erro ao carregar preferências:', error);
+      }
+    }
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
+    // Aplicar máscaras específicas
     let formattedValue = value;
 
     if (name === 'cpfCnpj') {
@@ -100,11 +128,13 @@ const CadastroEmpresa = () => {
 
   const isEmpty = (key: keyof CompanyData) => touched[key] && !fields[key];
 
+  // Validação de CNPJ
   const isValidCNPJ = (cnpj: string) => {
     const cleanCNPJ = cnpj.replace(/\D/g, '');
     return cleanCNPJ.length === 14;
   };
 
+  // Validação de email
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -163,45 +193,65 @@ const CadastroEmpresa = () => {
     setError(null);
 
     try {
-      // Simular chamada da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const companyData = {
+        ...fields,
+        cpfCnpj: fields.cpfCnpj.replace(/\D/g, ''),
+        phone: fields.phone.replace(/\D/g, ''),
+      };
 
-      // Adicionar empresa ao contexto global
-      addCompany({
-        name: fields.name,
-        cnpj: fields.cpfCnpj,
-        email: fields.email,
-        tradeName: fields.tradeName,
-        phone: fields.phone,
-        street: fields.street,
-        number: fields.number,
-        neighborhood: fields.neighborhood,
-        city: fields.city,
-        uf: fields.uf,
-      });
+      const response = await api.post('api/v1/Company', companyData);
 
-      // Gerenciar cookies de sucesso
+      // 🎉 Sucesso - Gerenciar cookies
+      
+      // 1. Remover dados temporários do formulário
       Cookies.remove('companyFormData');
-
+      
+      // 2. Salvar informações de sucesso
+      Cookies.set('lastCompanyRegistered', JSON.stringify({
+        name: fields.name,
+        tradeName: fields.tradeName,
+        registeredAt: new Date().toISOString()
+      }), { expires: 30 }); // 30 dias
+      
+      // 3. Incrementar contador de empresas cadastradas
       const companiesCount = parseInt(Cookies.get('companiesRegisteredCount') || '0');
       Cookies.set('companiesRegisteredCount', (companiesCount + 1).toString(), { expires: 365 });
+      
+      // 4. Salvar estatísticas do usuário
+      const userStats = {
+        lastAction: 'company_registered',
+        lastActionDate: new Date().toISOString(),
+        totalCompanies: companiesCount + 1
+      };
+      Cookies.set('userStats', JSON.stringify(userStats), { expires: 365 });
 
       setSuccess(true);
       setFields(initialFields);
       setTouched({});
 
-      // Redirecionar após 2 segundos
+      // Mostrar mensagem de sucesso por 3 segundos antes de redirecionar
       setTimeout(() => {
-        navigate('/listaempresas');
-      }, 2000);
+        window.location.href = "/listaempresas";
+      }, 3000);
 
     } catch (err: any) {
-      setError('Erro ao cadastrar empresa');
+      // 🔥 Erro - Salvar para debug
+      const errorInfo = {
+        timestamp: new Date().toISOString(),
+        error: err.response?.data?.message || err.message,
+        endpoint: 'api/v1/Company',
+        userAgent: navigator.userAgent
+      };
+      
+      Cookies.set('lastError', JSON.stringify(errorInfo), { expires: 7 });
+      
+      setError(err.response?.data?.message || 'Erro ao cadastrar empresa');
     } finally {
       setLoading(false);
     }
   };
 
+  // 🧹 Função para limpar formulário e cookies
   const handleClearForm = () => {
     setFields(initialFields);
     setTouched({});
@@ -210,27 +260,35 @@ const CadastroEmpresa = () => {
     Cookies.remove('companyFormData');
   };
 
+  // 📊 Mostrar estatísticas do usuário (opcional)
+  const getUserStats = () => {
+    const userStats = Cookies.get('userStats');
+    if (userStats) {
+      try {
+        return JSON.parse(userStats);
+      } catch (error) {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const stats = getUserStats();
+
   return (
     <section className="py-12 flex items-center justify-center min-h-screen bg-background">
       <div className="container max-w-5xl mx-auto">
+        {/* 📊 Mostrar estatísticas do usuário */}
+        {stats && stats.totalCompanies > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
+            ℹ️ Você já cadastrou {stats.totalCompanies} empresa(s) no sistema.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-x-8 gap-y-6 bg-surface p-10 rounded-lg shadow-md">
           <h2 className="col-span-2 text-3xl font-bold text-center mb-6 text-textPrimary">
             Cadastro de Empresa
           </h2>
-
-          {/* Mostrar se há dados recuperados */}
-          {Cookies.get('companyFormData') && (
-            <div className="col-span-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded flex justify-between items-center">
-              <span>📝 Dados do formulário foram recuperados automaticamente.</span>
-              <button
-                type="button"
-                onClick={handleClearForm}
-                className="text-yellow-600 underline hover:text-yellow-800"
-              >
-                Limpar tudo
-              </button>
-            </div>
-          )}
 
           {/* Mensagens de feedback */}
           {error && (
@@ -241,12 +299,12 @@ const CadastroEmpresa = () => {
 
           {success && (
             <div className="col-span-2 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-              ✅ Empresa cadastrada com sucesso! Redirecionando para a lista...
+              ✅ Empresa cadastrada com sucesso! Redirecionando...
             </div>
           )}
 
-          {/* Campos do formulário */}
-          <DefaultColumn>
+            {/* Razão Social */}
+            <DefaultColumn>
             <InputField
               label="Razão Social:"
               name="name"
@@ -260,9 +318,10 @@ const CadastroEmpresa = () => {
             {isEmpty("name") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-          <DefaultColumn>
+            {/* Nome Fantasia */}
+            <DefaultColumn>
             <InputField
               label="Nome Fantasia:"
               name="tradeName"
@@ -276,9 +335,10 @@ const CadastroEmpresa = () => {
             {isEmpty("tradeName") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-          <DefaultColumn>
+            {/* CNPJ */}
+            <DefaultColumn>
             <InputField
               label="CNPJ:"
               name="cpfCnpj"
@@ -287,39 +347,40 @@ const CadastroEmpresa = () => {
               onChange={handleChange}
               onBlur={handleBlur}
               required
+              maxLength={18}
               className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("cpfCnpj") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
             {fields.cpfCnpj && !isValidCNPJ(fields.cpfCnpj) && touched.cpfCnpj && (
-              <span className="text-danger text-sm">CNPJ deve ter 14 dígitos</span>
+              <span className="text-danger text-sm">CNPJ inválido</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-          <DefaultColumn>
+            {/* Email */}
+            <DefaultColumn>
             <InputField
               label="Email:"
               name="email"
-              type="email"
-              placeholder="Digite o email da empresa"
+              placeholder="empresa@email.com"
               value={fields.email}
               onChange={handleChange}
               onBlur={handleBlur}
               required
+              type="email"
               className="focus:ring-primary text-textPrimary bg-background"
             />
             {isEmpty("email") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
             {fields.email && !isValidEmail(fields.email) && touched.email && (
-              <span className="text-danger text-sm">Email deve ter um formato válido</span>
+              <span className="text-danger text-sm">Email inválido</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-
-          {/* Telefone */}
-          <DefaultColumn>
+            {/* Telefone */}
+            <DefaultColumn>
             <InputField
               label="Telefone:"
               name="phone"
@@ -334,10 +395,10 @@ const CadastroEmpresa = () => {
             {isEmpty("phone") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-          {/* Rua */}
-          <DefaultColumn>
+            {/* Rua */}
+            <DefaultColumn>
             <InputField
               label="Rua:"
               name="street"
@@ -351,10 +412,10 @@ const CadastroEmpresa = () => {
             {isEmpty("street") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-          {/* Número */}
-          <DefaultColumn>
+            {/* Número */}
+            <DefaultColumn>
             <InputField
               label="Número:"
               name="number"
@@ -368,10 +429,10 @@ const CadastroEmpresa = () => {
             {isEmpty("number") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-          {/* Bairro */}
-          <DefaultColumn>
+            {/* Bairro */}
+            <DefaultColumn>
             <InputField
               label="Bairro:"
               name="neighborhood"
@@ -385,10 +446,10 @@ const CadastroEmpresa = () => {
             {isEmpty("neighborhood") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-          {/* Cidade */}
-          <DefaultColumn>
+            {/* Cidade */}
+            <DefaultColumn>
             <InputField
               label="Cidade:"
               name="city"
@@ -402,10 +463,10 @@ const CadastroEmpresa = () => {
             {isEmpty("city") && (
               <span className="text-danger text-sm">Campo obrigatório</span>
             )}
-          </DefaultColumn>
+            </DefaultColumn>
 
-          {/* UF */}
-          <DefaultColumn>
+            {/* UF */}
+            <DefaultColumn>
             <InputField
               label="UF:"
               name="uf"
@@ -423,13 +484,13 @@ const CadastroEmpresa = () => {
             {fields.uf && fields.uf.length !== 2 && touched.uf && (
               <span className="text-danger text-sm">UF deve ter 2 caracteres</span>
             )}
-          </DefaultColumn>
-
+            </DefaultColumn>
+          
           <div className="col-span-2 w-full mt-6 flex gap-4 justify-end">
             <button
               type="button"
               className="w-full bg-red-600 text-background px-6 py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
-              onClick={() => navigate('/listaempresas')}
+              onClick={() => window.location.href = "/listaempresas"}
               disabled={loading}
             >
               Voltar
