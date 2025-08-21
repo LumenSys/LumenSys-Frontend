@@ -19,10 +19,13 @@ export default function LoginPage() {
 
     try {
       const response = await api.post('api/user/login', { email, password });
-      const token = response.data.token;
+      const token = response.data?.data?.token;
 
-      Cookies.set('token', token, { expires: rememberMe ? 7 : undefined });
-      localStorage.setItem('email', email);
+      if (token) {
+        Cookies.set('token', token, { expires: rememberMe ? 7 : undefined });
+      }
+
+        localStorage.setItem('email', email);
 
       if (rememberMe) {
         localStorage.setItem('remember', 'true');
