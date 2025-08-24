@@ -222,10 +222,13 @@ export default function GerenciarPlanos() {
                 <Download className="w-4 h-4" />
                 Exportar
               </button>
-              <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <button
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                onClick={() => window.location.href = '/planosfunerarios'}
+                >
                 <Plus className="w-4 h-4" />
                 Novo Plano
-              </button>
+                </button>
             </div>
           </div>
         </div>

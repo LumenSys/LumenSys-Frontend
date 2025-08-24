@@ -8,5 +8,6 @@ export const routes =
             CADASTRO_EMPRESA: "/cadastroempresa",
             LIST_COMPANIES: "/listaempresas",
             SERVICOS: "/servicos",
-            CONTRATOS: "/contratos"
+            CONTRATOS: "/contratos",
+            PLANOS_FUNERARIOS: "/planosfunerarios"
     }

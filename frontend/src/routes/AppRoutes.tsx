@@ -11,6 +11,7 @@ import NotFound from "../pages/NotFound";
 import ListOfCompanies from "../pages/Listofcompanies";
 import Servicos from "../pages/Servicos";
 import ContratosPage from "../pages/Contratos";
+import PlanosFunerarios from "../pages/PlanosFunerarios";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -25,6 +26,7 @@ export const router = createBrowserRouter(
       <Route path={routes.LIST_COMPANIES} element={<ListOfCompanies />} />
       <Route path={routes.SERVICOS} element={<Servicos />} />
       <Route path={routes.CONTRATOS} element={<ContratosPage />} />
+      <Route path={routes.PLANOS_FUNERARIOS} element={<PlanosFunerarios />} />
       <Route path="*" element={<NotFound />} />
       </Route>
 </>
