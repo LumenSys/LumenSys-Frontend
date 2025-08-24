@@ -9,5 +9,6 @@ export const routes =
             LIST_COMPANIES: "/listaempresas",
             SERVICOS: "/servicos",
             CONTRATOS: "/contratos",
-            PLANOS_FUNERARIOS: "/planosfunerarios"
+            PLANOS_FUNERARIOS: "/planosfunerarios",
+            GERENCIAR_CONTRATOS: "/gerenciarcontratos"
     }

@@ -6,7 +6,7 @@ const menuItems = [
   { to: '/cadastroempresa', label: 'Empresas', icon: Building2 },
   { to: '/GerenciarPlanos', label: 'Planos', icon: FileText },
   { to: '/servicos', label: 'Serviços', icon: Heart },
-  { to: '/contratos', label: 'Contratos', icon: Users },
+  { to: '/gerenciarcontratos', label: 'Contratos', icon: Users },
 ];
 
 export default function Sidebar() {
