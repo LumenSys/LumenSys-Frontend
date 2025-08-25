@@ -266,7 +266,9 @@ export default function GerenciarContratos() {
                 <Button
                     variant="contained"
                     startIcon={<Add />}
-                    onClick={handleOpenDialog}
+                    onClick={() => {
+                        window.location.href = "/criarcontrato";
+                    }}
                     size="large"
                 >
                     Novo Contrato

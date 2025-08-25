@@ -10,5 +10,6 @@ export const routes =
             SERVICOS: "/servicos",
             CONTRATOS: "/contratos",
             PLANOS_FUNERARIOS: "/planosfunerarios",
-            GERENCIAR_CONTRATOS: "/gerenciarcontratos"
+            GERENCIAR_CONTRATOS: "/gerenciarcontratos",
+            CRIAR_CONTRATO: "/criarcontrato"
     }
