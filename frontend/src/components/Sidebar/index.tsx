@@ -13,7 +13,6 @@ export default function Sidebar() {
   return (
     <div className="w-64 bg-surface text-textPrimary min-h-screen pt-20 p-6 border-r border-footer">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-textPrimary flex items-center gap-2">LumenSys</h1>
 
       </div>
       <nav className="space-y-2">
