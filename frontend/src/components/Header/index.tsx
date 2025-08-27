@@ -18,9 +18,9 @@ export default function Header() {
   return (
 
     <header className="w-full bg-white/95 backdrop-blur-md border-b border-gray-100 text-textPrimary shadow-sm fixed top-0 z-50">
-      <div className="max-w-7xl  flex items-center justify-between h-20 px-2">
+      <div className="max-w-7xl flex items-center h-20 px-2">
         {/* Logo */}
-        <div className="flex items-center justify-start flex-1 mr-45">
+        <div className="flex items-center justify-start flex-1 mr-8">
           <a href="/" className="flex items-center space-x-4 group">
             <div className="relative">
               <img
@@ -34,24 +34,24 @@ export default function Header() {
             </span>
           </a>
         </div>
-
-        {showAuthButtons && (
-          <div className="flex items-center space-x-6 ml-8">
-            <button
-              onClick={handleLoginClick}
-              className="px-6 py-3 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
-            >
-              Fazer Login
-            </button>
-            <button
-              onClick={handleJoinClick}
-              className="px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-hoverButton2 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              Começar Agora
-            </button>
-          </div>
-        )}
       </div>
+
+      {showAuthButtons && (
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-4">
+          <button
+            onClick={handleLoginClick}
+            className="px-6 py-3 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+          >
+            Fazer Login
+          </button>
+          <button
+            onClick={handleJoinClick}
+            className="px-6 py-3 bg-secondary text-white font-medium rounded-lg hover:bg-hoverButton2 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg"
+          >
+            Começar Agora
+          </button>
+        </div>
+      )}
     </header>
   )
 }
