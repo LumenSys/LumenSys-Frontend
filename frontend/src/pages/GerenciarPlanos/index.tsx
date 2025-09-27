@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Search, Plus, Edit2, Eye, Filter, Download, Settings, Users, Calendar, DollarSign } from 'lucide-react';
-import Breadcrumb from '../../components/Breadcrumb';
+import PageLayout from '../../components/PageLayout';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import StatsCard from '../../components/StatsCard';
 
 interface Plano {
   id: number;
@@ -84,9 +87,9 @@ export default function GerenciarPlanos() {
 
   const getStatusBadge = (status: string) => {
     const statusStyles = {
-      ativo: 'bg-green-100 text-green-800 border-green-200',
-      inativo: 'bg-red-100 text-red-800 border-red-200',
-      rascunho: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      ativo: 'bg-success/20 text-success border-success/30',
+      inativo: 'bg-danger/20 text-danger border-danger/30',
+      rascunho: 'bg-warning/20 text-warning border-warning/30'
     };
     
     return (
@@ -98,11 +101,11 @@ export default function GerenciarPlanos() {
 
   const getCoberturaBadge = (foraDeAr: boolean) => {
     return foraDeAr ? (
-      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium border border-blue-200">
+      <span className="px-2 py-1 bg-primary/20 text-primary rounded-full text-xs font-medium border border-primary/30">
         Nacional
       </span>
     ) : (
-      <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium border border-gray-200">
+      <span className="px-2 py-1 bg-footer text-textSecondary rounded-full text-xs font-medium border border-footer">
         Local
       </span>
     );
@@ -114,217 +117,187 @@ export default function GerenciarPlanos() {
   const totalClientes = planosExemplo.reduce((sum, p) => sum + p.totalClientes, 0);
   const receitaTotal = planosExemplo.reduce((sum, p) => sum + (p.valorAnual * p.totalClientes), 0);
 
+  const statsData = [
+    {
+      title: "Total de Planos",
+      value: totalPlanos,
+      icon: Settings,
+      iconColor: "text-blue-600"
+    },
+    {
+      title: "Planos Ativos",
+      value: planosAtivos,
+      icon: Calendar,
+      iconColor: "text-green-600"
+    },
+    {
+      title: "Total Clientes",
+      value: totalClientes,
+      icon: Users,
+      iconColor: "text-purple-600"
+    },
+    {
+      title: "Receita Anual",
+      value: receitaTotal.toLocaleString('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL', 
+        maximumFractionDigits: 0 
+      }),
+      icon: DollarSign,
+      iconColor: "text-green-600"
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6 pt-20">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Breadcrumb />
-          <div className="mt-4">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Gerenciar Planos
-            </h1>
-            <p className="text-lg text-gray-600">
-              Configure e gerencie todos os planos funerários disponíveis
-            </p>
+    <PageLayout
+      title="Gerenciar Planos"
+      subtitle="Configure e gerencie todos os planos funerários disponíveis"
+      actions={
+        <div className="flex gap-3">
+          <Button variant="outline" icon={Filter} size="md">
+            Filtros
+          </Button>
+          <Button variant="outline" icon={Download} size="md">
+            Exportar
+          </Button>
+          <Button 
+            variant="primary" 
+            icon={Plus} 
+            size="md"
+            onClick={() => window.location.href = '/planosfunerarios'}
+          >
+            Novo Plano
+          </Button>
+        </div>
+      }
+    >
+      {/* Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statsData.map((stat, index) => (
+          <StatsCard key={index} {...stat} />
+        ))}
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-textSecondary" />
+              <input
+                type="text"
+                placeholder="Buscar planos..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-footer rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-surface"
+              />
+            </div>
+
+            <select
+              value={filtroStatus}
+              onChange={(e) => setFiltroStatus(e.target.value as any)}
+              className="px-4 py-3 border border-footer rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-surface"
+            >
+              <option value="todos">Todos os Status</option>
+              <option value="ativo">Ativos</option>
+              <option value="inativo">Inativos</option>
+              <option value="rascunho">Rascunhos</option>
+            </select>
           </div>
         </div>
+      </Card>
 
-        {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Total de Planos</p>
-                <p className="text-3xl font-bold text-gray-900">{totalPlanos}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-blue-500">
-                <Settings className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Planos Ativos</p>
-                <p className="text-3xl font-bold text-gray-900">{planosAtivos}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-green-500">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Total Clientes</p>
-                <p className="text-3xl font-bold text-gray-900">{totalClientes}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-purple-500">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Receita Anual</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  {receitaTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
-                </p>
-              </div>
-              <div className="p-3 rounded-xl bg-green-600">
-                <DollarSign className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filtros e Ações */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              {/* Busca */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar planos..."
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              {/* Filtro Status */}
-              <select
-                value={filtroStatus}
-                onChange={(e) => setFiltroStatus(e.target.value as any)}
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              >
-                <option value="todos">Todos os Status</option>
-                <option value="ativo">Ativos</option>
-                <option value="inativo">Inativos</option>
-                <option value="rascunho">Rascunhos</option>
-              </select>
-            </div>
-
-            {/* Ações */}
-            <div className="flex gap-3">
-              <button className="flex items-center gap-2 px-4 py-3 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                <Filter className="w-4 h-4" />
-                Filtros
-              </button>
-              <button className="flex items-center gap-2 px-4 py-3 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                <Download className="w-4 h-4" />
-                Exportar
-              </button>
-                <button
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                onClick={() => window.location.href = '/planosfunerarios'}
-                >
-                <Plus className="w-4 h-4" />
-                Novo Plano
-                </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabela de Planos */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Plano
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Valor Anual
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cobertura
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dependentes
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Clientes
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
+      {/* Tabela de Planos */}
+      <Card padding="none">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-footer">
+            <thead className="bg-footer">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Plano
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Valor Anual
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Cobertura
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Dependentes
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Clientes
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-surface divide-y divide-footer">
+              {planosFiltrados.map((plano) => (
+                <tr key={plano.id} className="hover:bg-footer/50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-textPrimary">{plano.nome}</div>
+                      <div className="text-sm text-textSecondary">{plano.descricao}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(plano.status)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-textPrimary">
+                      {plano.valorAnual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </div>
+                    <div className="text-xs text-textSecondary">
+                      +{plano.adicionalDependente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/dep.
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getCoberturaBadge(plano.foraDeAr)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-textPrimary">
+                      Máx: {plano.maxDependente}
+                    </div>
+                    <div className="text-xs text-textSecondary">
+                      Até {plano.idadeMaxima} anos
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-textPrimary">{plano.totalClientes}</div>
+                    <div className="text-xs text-textSecondary">clientes ativos</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {planosFiltrados.map((plano) => (
-                  <tr key={plano.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{plano.nome}</div>
-                        <div className="text-sm text-gray-500">{plano.descricao}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(plano.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-semibold text-gray-900">
-                        {plano.valorAnual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        +{plano.adicionalDependente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/dep.
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getCoberturaBadge(plano.foraDeAr)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        Máx: {plano.maxDependente}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Até {plano.idadeMaxima} anos
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{plano.totalClientes}</div>
-                      <div className="text-xs text-gray-500">clientes ativos</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Visualizar">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Editar">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {planosFiltrados.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-500">
-                {busca ? `Nenhum plano encontrado para "${busca}"` : 'Nenhum plano encontrado'}
-              </div>
-            </div>
-          )}
+              ))}
+            </tbody>
+          </table>
         </div>
+
+        {planosFiltrados.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-textSecondary">
+              {busca ? `Nenhum plano encontrado para "${busca}"` : 'Nenhum plano encontrado'}
+            </div>
+          </div>
+        )}
 
         {/* Rodapé com informações */}
-        <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="px-6 py-4 border-t border-footer bg-footer/30">
+          <div className="flex items-center justify-between text-sm text-textSecondary">
             <span>
               Mostrando {planosFiltrados.length} de {totalPlanos} planos
             </span>
@@ -333,7 +306,7 @@ export default function GerenciarPlanos() {
             </span>
           </div>
         </div>
-      </div>
-    </div>
+      </Card>
+    </PageLayout>
   );
 }

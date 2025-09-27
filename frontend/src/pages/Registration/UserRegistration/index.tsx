@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiService from '../../../services/apiService';
 import InputField from '../../../components/Input/InputField';
+import Card from '../../../components/Card';
+import Button from '../../../components/Button';
+import { User, Mail, Lock } from 'lucide-react';
 
 export default function UserRegistration() {
   const [name, setName] = useState('');
@@ -28,81 +31,100 @@ export default function UserRegistration() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
-    }}>
-      <form
-        onSubmit={handleRegister}
-        style={{
-          background: '#fff',
-          padding: '2.5rem 2rem',
-          borderRadius: '12px',
-          boxShadow: '0 8px 32px rgba(60,60,120,0.15)',
-          minWidth: 340,
-          width: '100%',
-          maxWidth: 400,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.2rem'
-        }}
-      >
-        <h2 style={{
-          textAlign: 'center',
-          marginBottom: '1rem',
-          color: '#2d3748',
-          fontWeight: 700,
-          letterSpacing: 1
-        }}>
-          Cadastro de Usuário
-        </h2>
-        <InputField
-          label="Nome"
-          name="name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          required
-        />
-        <InputField
-          label="Email"
-          name="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
-        <InputField
-          label="Senha"
-          name="password"
-          type="password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            borderRadius: '8px',
-            border: 'none',
-            background: loading ? '#a0aec0' : 'linear-gradient(90deg, #667eea 0%, #5a67d8 100%)',
-            color: '#fff',
-            fontWeight: 600,
-            fontSize: '1rem',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'background 0.2s'
-          }}
-        >
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
-        </button>
-        <div style={{ textAlign: 'center', marginTop: '0.5rem', color: '#718096', fontSize: 14 }}>
-          Já possui uma conta? <a href="/login" style={{ color: '#5a67d8', textDecoration: 'none', fontWeight: 500 }}>Entrar</a>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/10 to-background">
+      <Card className="w-full max-w-md shadow-2xl">
+        <div className="text-center mb-8">
+          <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
+            <User className="text-secondary" size={24} />
+          </div>
+          <h1 className="text-3xl font-bold text-textPrimary mb-2">
+            Criar Conta
+          </h1>
+          <p className="text-textSecondary">
+            Junte-se a nós! É rápido e fácil.
+          </p>
         </div>
-      </form>
+
+        <form onSubmit={handleRegister} className="space-y-6">
+          <div className="space-y-4">
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-textSecondary" size={18} />
+              <InputField
+                label=""
+                name="name"
+                placeholder="Digite seu nome completo"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+                className="pl-10 focus:ring-secondary text-textPrimary bg-background"
+              />
+            </div>
+
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-textSecondary" size={18} />
+              <InputField
+                label=""
+                name="email"
+                type="email"
+                placeholder="Digite seu email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="pl-10 focus:ring-secondary text-textPrimary bg-background"
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-textSecondary" size={18} />
+              <InputField
+                label=""
+                name="password"
+                type="password"
+                placeholder="Crie uma senha segura"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="pl-10 focus:ring-secondary text-textPrimary bg-background"
+              />
+            </div>
+          </div>
+
+          <div className="text-xs text-textSecondary">
+            Ao criar uma conta, você concorda com nossos{' '}
+            <button type="button" className="text-secondary underline hover:text-hoverButton2">
+              Termos de Serviço
+            </button>{' '}
+            e{' '}
+            <button type="button" className="text-secondary underline hover:text-hoverButton2">
+              Política de Privacidade
+            </button>
+            .
+          </div>
+
+          <Button
+            type="submit"
+            variant="secondary"
+            size="lg"
+            loading={loading}
+            className="w-full"
+          >
+            Criar Conta
+          </Button>
+        </form>
+
+        <div className="mt-8 pt-6 border-t border-footer">
+          <p className="text-center text-sm text-textSecondary">
+            Já possui uma conta?{' '}
+            <button
+              type="button"
+              className="text-secondary underline hover:text-hoverButton2 font-medium"
+              onClick={() => navigate('/login')}
+            >
+              Fazer login
+            </button>
+          </p>
+        </div>
+      </Card>
     </div>
   );
 }

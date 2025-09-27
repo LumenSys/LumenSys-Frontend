@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import GenericTable from '../../components/DashBoard/Table';
 import { Users, CheckCircle, Ban, TrendingUp, Edit2, Search, Filter, Download, Eye } from 'lucide-react';
-import Breadcrumb from '../../components/Breadcrumb';
+import PageLayout from '../../components/PageLayout';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import StatsCard from '../../components/StatsCard';
 
 interface ContractData {
     name: string;
@@ -40,38 +43,42 @@ const DashBoard: React.FC = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
-    const dashboardCards = [
+    const dashboardStats = [
         {
             title: "Total de Clientes",
             value: 247,
             change: "+12%",
-            changeType: "positive",
-            bgColor: "bg-gradient-to-br from-blue-500 to-blue-600",
-            icon: <Users size={28} className="text-white" />
+            changeType: "positive" as const,
+            icon: Users,
+            iconColor: "text-blue-600",
+            description: "vs. mês anterior"
         },
         {
             title: "Contratos Ativos",
             value: 235,
             change: "+8%",
-            changeType: "positive",
-            bgColor: "bg-gradient-to-br from-green-500 to-green-600",
-            icon: <CheckCircle size={28} className="text-white" />
+            changeType: "positive" as const,
+            icon: CheckCircle,
+            iconColor: "text-green-600",
+            description: "vs. mês anterior"
         },
         {
             title: "Contratos Inativos",
             value: 12,
             change: "-3%",
-            changeType: "negative",
-            bgColor: "bg-gradient-to-br from-red-500 to-red-600",
-            icon: <Ban size={28} className="text-white" />
+            changeType: "negative" as const,
+            icon: Ban,
+            iconColor: "text-red-600",
+            description: "vs. mês anterior"
         },
         {
             title: "Receita Mensal",
             value: "R$ 387.420",
             change: "+15%",
-            changeType: "positive",
-            bgColor: "bg-gradient-to-br from-purple-500 to-purple-600",
-            icon: <TrendingUp size={28} className="text-white" />
+            changeType: "positive" as const,
+            icon: TrendingUp,
+            iconColor: "text-purple-600",
+            description: "vs. mês anterior"
         }
     ];
 
@@ -182,122 +189,97 @@ const DashBoard: React.FC = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 pt-20">
-            {/* Header Section */}
-            <div className="mb-8">
-                <Breadcrumb />
-                <div className="mt-4">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                        Seja bem-vindo! 👋
-                    </h1>
-                    <p className="text-lg text-gray-600">
-                        Gerencie seus serviços e planos funerários com facilidade
-                    </p>
+        <PageLayout
+            title="Seja bem-vindo! 👋"
+            subtitle="Gerencie seus serviços e planos funerários com facilidade"
+            actions={
+                <div className="flex gap-3">
+                    <Button variant="outline" icon={Filter} size="md">
+                        Filtros
+                    </Button>
+                    <Button variant="outline" icon={Download} size="md">
+                        Exportar
+                    </Button>
                 </div>
-            </div>
-
+            }
+        >
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {dashboardCards.map((card, idx) => (
-                    <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
-                                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                                <div className="flex items-center mt-2">
-                                    <span className={`text-sm font-medium ${
-                                        card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                                    }`}>
-                                        {card.change}
-                                    </span>
-                                    <span className="text-sm text-gray-500 ml-1">vs. mês anterior</span>
-                                </div>
-                            </div>
-                            <div className={`p-3 rounded-xl ${card.bgColor}`}>
-                                {card.icon}
-                            </div>
-                        </div>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {dashboardStats.map((stat, index) => (
+                    <StatsCard key={index} {...stat} />
                 ))}
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
+            {/* Quick Actions Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                    <h3 className="text-lg font-semibold text-textPrimary mb-4">Ações Rápidas</h3>
                     <div className="space-y-3">
-                        <button className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
-                            <Users size={18} />
-                            <span>Novo Cliente</span>
-                        </button>
-                        <button className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
-                            <CheckCircle size={18} />
-                            <span>Novo Contrato</span>
-                        </button>
+                        <Button variant="primary" size="md" className="w-full" icon={Users}>
+                            Novo Cliente
+                        </Button>
+                        <Button variant="secondary" size="md" className="w-full" icon={CheckCircle}>
+                            Novo Contrato
+                        </Button>
                     </div>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumo do Dia</h3>
+                <Card>
+                    <h3 className="text-lg font-semibold text-textPrimary mb-4">Resumo do Dia</h3>
                     <div className="space-y-3">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Novos contratos:</span>
-                            <span className="font-semibold text-green-600">+3</span>
+                            <span className="text-textSecondary">Novos contratos:</span>
+                            <span className="font-semibold text-success">+3</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Pendências:</span>
-                            <span className="font-semibold text-yellow-600">2</span>
+                            <span className="text-textSecondary">Pendências:</span>
+                            <span className="font-semibold text-warning">2</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Cancelamentos:</span>
-                            <span className="font-semibold text-red-600">1</span>
+                            <span className="text-textSecondary">Cancelamentos:</span>
+                            <span className="font-semibold text-danger">1</span>
                         </div>
                     </div>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Meta Mensal</h3>
+                <Card>
+                    <h3 className="text-lg font-semibold text-textPrimary mb-4">Meta Mensal</h3>
                     <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Progresso:</span>
-                            <span className="font-semibold text-blue-600">78%</span>
+                            <span className="text-textSecondary">Progresso:</span>
+                            <span className="font-semibold text-primary">78%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '78%' }}></div>
+                        <div className="w-full bg-footer rounded-full h-2">
+                            <div className="bg-primary h-2 rounded-full" style={{ width: '78%' }}></div>
                         </div>
-                        <p className="text-sm text-gray-500">R$ 78.000 de R$ 100.000</p>
+                        <p className="text-sm text-textSecondary">R$ 78.000 de R$ 100.000</p>
                     </div>
-                </div>
+                </Card>
             </div>
 
             {/* Table Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
+            <Card padding="none">
+                <div className="p-6 border-b border-footer">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-900">Contratos Recentes</h2>
-                            <p className="text-gray-600">Gerencie todos os contratos do sistema</p>
+                            <h2 className="text-xl font-semibold text-textPrimary">Contratos Recentes</h2>
+                            <p className="text-textSecondary">Gerencie todos os contratos do sistema</p>
                         </div>
                         
                         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                             <div className="relative">
-                                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                <Search className="absolute left-3 top-3 h-4 w-4 text-textSecondary" />
                                 <input
                                     type="text"
                                     placeholder="Buscar contratos..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    className="pl-10 pr-4 py-2 border border-footer rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-surface"
                                 />
                             </div>
-                            <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
-                                <Filter size={16} />
-                                <span>Filtros</span>
-                            </button>
-                            <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
-                                <Download size={16} />
-                                <span>Exportar</span>
-                            </button>
+                            <Button variant="outline" icon={Eye} size="md">
+                                Ver Detalhes
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -310,19 +292,20 @@ const DashBoard: React.FC = () => {
                 />
 
                 {/* Custom Pagination */}
-                <div className="px-6 py-4 border-t border-gray-200">
+                <div className="px-6 py-4 border-t border-footer">
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-textSecondary">
                             Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredData.length)} de {filteredData.length} contratos
                         </p>
                         <div className="flex items-center space-x-2">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Anterior
-                            </button>
+                            </Button>
                             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                 const page = i + 1;
                                 return (
@@ -331,26 +314,27 @@ const DashBoard: React.FC = () => {
                                         onClick={() => setCurrentPage(page)}
                                         className={`px-3 py-2 text-sm rounded-md transition-colors ${
                                             currentPage === page
-                                                ? 'bg-blue-600 text-white'
-                                                : 'text-gray-600 hover:bg-gray-100'
+                                                ? 'bg-primary text-white'
+                                                : 'text-textSecondary hover:bg-footer'
                                         }`}
                                     >
                                         {page}
                                     </button>
                                 );
                             })}
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Próximo
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </Card>
+        </PageLayout>
     );
 };
 

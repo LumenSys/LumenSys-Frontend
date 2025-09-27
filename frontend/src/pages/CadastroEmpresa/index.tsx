@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import InputField from '../../components/Input/InputField';
 import ApiService from '../../services/apiService';
 import Cookies from 'js-cookie';
+import PageLayout from '../../components/PageLayout';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import { Building2, Save, X } from 'lucide-react';
 
 // Tipo baseado no modelo Company da API
 type CompanyData = {
@@ -276,7 +280,7 @@ const CadastroEmpresa = () => {
   const stats = getUserStats();
 
   return (
-    <section className="py-12 flex items-center justify-center min-h-screen bg-background">
+    <PageLayout title="Cadastro de Empresa" subtitle="Registre uma nova empresa no sistema">
       <div className="container max-w-5xl mx-auto">
         {/* 📊 Mostrar estatísticas do usuário */}
         {stats && stats.totalCompanies > 0 && (
@@ -506,7 +510,7 @@ const CadastroEmpresa = () => {
           </div>
         </form>
       </div>
-    </section>
+    </PageLayout>
   );
 };
 
