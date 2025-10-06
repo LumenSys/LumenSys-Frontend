@@ -1,73 +1,65 @@
 import React, { useState } from "react";
-import {
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  Stack,
-  Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  SelectChangeEvent,
-  Chip,
-  Tabs,
-  Tab,
-  Divider,
-} from "@mui/material";
-import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import MusicNoteIcon from "@mui/icons-material/MusicNote";
-import SecurityIcon from "@mui/icons-material/Security";
-import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
-import BusinessIcon from "@mui/icons-material/Business";
-import LocalDiningIcon from "@mui/icons-material/LocalDining";
-import PrintIcon from "@mui/icons-material/Print";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import ChurchIcon from "@mui/icons-material/Church";
-import WorkIcon from "@mui/icons-material/Work";
-import HomeIcon from "@mui/icons-material/Home";
-import PeopleIcon from "@mui/icons-material/People";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import InventoryIcon from "@mui/icons-material/Inventory";
-import SpaIcon from "@mui/icons-material/Spa";
+import { 
+  Settings, 
+  Plus, 
+  Eye, 
+  Edit2, 
+  Archive, 
+  Clock, 
+  MapPin, 
+  Calendar, 
+  Camera, 
+  Music, 
+  Shield, 
+  Trash2, 
+  Building, 
+  Utensils, 
+  Printer, 
+  Heart, 
+  Church, 
+  Briefcase, 
+  Home, 
+  Users, 
+  Truck, 
+  Package,
+  Search,
+  Filter,
+  Car,
+  FlowerIcon as Flower,
+  X,
+} from 'lucide-react';
+import { Container, Typography, Box, Tabs, Tab, CardContent, Stack, Chip, Divider, Dialog, DialogTitle, DialogContent, TextField, FormControl, InputLabel, Select, MenuItem, DialogActions } from '@mui/material';
+import Card from '@mui/material/Card';
+import Button from '../../components/Button';
+import { useTheme } from '../../context/ThemeContext';
+import { SelectChangeEvent } from "@mui/material";
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 // Exemplo de planos e clientes (substitua por dados reais)
 const planos = [{ id: 1, nome: "Plano Ouro" }, { id: 2, nome: "Plano Prata" }, { id: 3, nome: "Plano Bronze" }];
 const clientes = [{ id: 1, nome: "João Silva" }, { id: 2, nome: "Maria Souza" }, { id: 3, nome: "Pedro Santos" }];
 
 const icones = {
-  "Organização de Velórios": <EventAvailableIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Transporte Funerário": <DirectionsCarIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Floricultura": <LocalFloristIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Fotografia e Filmagem": <CameraAltIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Música e Coral": <MusicNoteIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Segurança": <SecurityIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Limpeza e Higienização": <CleaningServicesIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Documentação Legal": <BusinessIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Buffet e Recepção": <LocalDiningIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Impressões e Comunicados": <PrintIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Cuidados Especiais": <FavoriteIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Serviços Religiosos": <ChurchIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Preparação do Corpo": <WorkIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Atendimento Domiciliar": <HomeIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Apoio Psicológico": <PeopleIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Translado": <LocalShippingIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Urnas e Caixões": <InventoryIcon color="primary" sx={{ fontSize: 40 }} />,
-  "Tanatopraxia": <SpaIcon color="primary" sx={{ fontSize: 40 }} />,
+  "Organização de Velórios": <Calendar className="text-primary" size={32} />,
+  "Transporte Funerário": <Car className="text-primary" size={32} />,
+  "Floricultura": <Flower className="text-primary" size={32} />,
+  "Fotografia e Filmagem": <Camera className="text-primary" size={32} />,
+  "Música e Coral": <Music className="text-primary" size={32} />,
+  "Segurança": <Shield className="text-primary" size={32} />,
+  "Limpeza e Higienização": <Trash2 className="text-primary" size={32} />,
+  "Documentação Legal": <Building className="text-primary" size={32} />,
+  "Buffet e Recepção": <Utensils className="text-primary" size={32} />,
+  "Impressões e Comunicados": <Printer className="text-primary" size={32} />,
+  "Cuidados Especiais": <Heart className="text-primary" size={32} />,
+  "Serviços Religiosos": <Church className="text-primary" size={32} />,
+  "Preparação do Corpo": <Briefcase className="text-primary" size={32} />,
+  "Atendimento Domiciliar": <Home className="text-primary" size={32} />,
+  "Apoio Psicológico": <Users className="text-primary" size={32} />,
+  "Translado": <Truck className="text-primary" size={32} />,
+  "Urnas e Caixões": <Package className="text-primary" size={32} />,
+  "Tanatopraxia": <Settings className="text-primary" size={32} />,
 };
 
 type Servico = {
@@ -393,7 +385,7 @@ const Servicos: React.FC = () => {
           <Tab label="Concluídos" />
           <Tab label="Arquivados" />
         </Tabs>
-        <Button variant="contained" onClick={() => handleOpen()}>
+        <Button variant="primary" onClick={() => handleOpen()}>
           Adicionar Serviço
         </Button>
       </Box>
@@ -491,16 +483,15 @@ const Servicos: React.FC = () => {
               </Stack>
 
               <Stack direction="row" spacing={1} mt={2} flexWrap="wrap">
-                <Button variant="outlined" onClick={() => handleOpen(servico)} size="small">
+                <Button variant="outline" onClick={() => handleOpen(servico)} size="sm">
                   Editar
                 </Button>
                 
                 {!servico.concluido && !servico.arquivado && (
                   <Button
-                    variant="contained"
-                    color="success"
+                    variant="primary"
                     onClick={() => handleConcluir(servico.id)}
-                    size="small"
+                    size="sm"
                   >
                     Concluir
                   </Button>
@@ -509,18 +500,16 @@ const Servicos: React.FC = () => {
                 {servico.concluido && !servico.arquivado && (
                   <>
                     <Button
-                      variant="outlined"
-                      color="warning"
+                      variant="outline"
                       onClick={() => handleArquivar(servico.id)}
-                      size="small"
-                      startIcon={<ArchiveIcon />}
+                      size="sm"
                     >
                       Arquivar
                     </Button>
                     <Button
-                      variant="outlined"
+                      variant="outline"
                       onClick={() => handleReativar(servico.id)}
-                      size="small"
+                      size="sm"
                     >
                       Reativar
                     </Button>
@@ -529,9 +518,9 @@ const Servicos: React.FC = () => {
 
                 {servico.arquivado && (
                   <Button
-                    variant="outlined"
+                    variant="outline"
                     onClick={() => handleArquivar(servico.id)}
-                    size="small"
+                    size="sm"
                   >
                     Desarquivar
                   </Button>
@@ -741,7 +730,7 @@ const Servicos: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancelar</Button>
-          <Button onClick={handleSave} variant="contained">
+          <Button onClick={handleSave} variant="primary">
             Salvar
           </Button>
         </DialogActions>

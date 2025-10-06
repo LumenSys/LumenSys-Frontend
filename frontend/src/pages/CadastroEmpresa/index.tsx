@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 import PageLayout from '../../components/PageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { Building2, Save, X } from 'lucide-react';
+import { Building2, Save, X, Upload, Image as ImageIcon } from 'lucide-react';
 
 // Tipo baseado no modelo Company da API
 type CompanyData = {
@@ -19,6 +19,7 @@ type CompanyData = {
   neighborhood: string;
   city: string;
   uf: string;
+  logo?: File | null;
 };
 
 const initialFields: CompanyData = {
@@ -32,6 +33,7 @@ const initialFields: CompanyData = {
   neighborhood: "",
   city: "",
   uf: "",
+  logo: null,
 };
 
 const CadastroEmpresa = () => {
@@ -55,10 +57,12 @@ const CadastroEmpresa = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   // 💾 Salvar dados no cookie sempre que os campos mudarem
   useEffect(() => {
-    const hasData = Object.values(fields).some(value => value.trim() !== "");
+    const hasData = Object.values(fields).some(value => value !== null && value !== undefined && typeof value === "string" ? value.trim() !== "" : !!value);
     
     if (hasData) {
       // Salvar dados no cookie por 24 horas
@@ -148,7 +152,7 @@ const CadastroEmpresa = () => {
     const errors: string[] = [];
 
     Object.entries(fields).forEach(([key, value]) => {
-      if (!value.trim()) {
+      if (typeof value === "string" ? value.trim() === "" : value == null) {
         errors.push(`${getFieldLabel(key as keyof CompanyData)} é obrigatório`);
       }
     });
@@ -179,9 +183,59 @@ const CadastroEmpresa = () => {
       number: 'Número',
       neighborhood: 'Bairro',
       city: 'Cidade',
-      uf: 'UF'
+      uf: 'UF',
+      logo: 'Logo da Empresa'
     };
     return labels[key];
+  };
+
+  // Funções para lidar com upload de imagem
+  const handleImageUpload = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      setError('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Formato de imagem não suportado. Use JPEG, PNG, WebP ou SVG');
+      return;
+    }
+
+    setFields(prev => ({ ...prev, logo: file }));
+    
+    // Criar preview da imagem
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    setError(null);
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleImageUpload(files[0]);
+    }
+  };
+
+  const handleImageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleImageDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const removeImage = () => {
+    setFields(prev => ({ ...prev, logo: null }));
+    setImagePreview(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -280,248 +334,337 @@ const CadastroEmpresa = () => {
   const stats = getUserStats();
 
   return (
-    <PageLayout title="Cadastro de Empresa" subtitle="Registre uma nova empresa no sistema">
-      <div className="container max-w-5xl mx-auto">
-        {/* 📊 Mostrar estatísticas do usuário */}
-        {stats && stats.totalCompanies > 0 && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
-            ℹ️ Você já cadastrou {stats.totalCompanies} empresa(s) no sistema.
+    <PageLayout
+      title="Cadastro de Empresa"
+      subtitle="Registre uma nova empresa no sistema"
+      actions={
+        <Button
+          variant="outline"
+          icon={X}
+          onClick={() => window.location.href = "/listaempresas"}
+          disabled={loading}
+        >
+          Cancelar
+        </Button>
+      }
+    >
+      {/* Estatísticas do usuário */}
+      {stats && stats.totalCompanies > 0 && (
+        <Card className="bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-3">
+            <Building2 className="text-primary" size={20} />
+            <span className="text-textPrimary text-sm">
+              Você já cadastrou {stats.totalCompanies} empresa(s) no sistema.
+            </span>
           </div>
+        </Card>
+      )}
+
+      {/* Formulário Principal */}
+      <form onSubmit={handleSubmit} className="space-y-8">
+        
+        {/* Seção: Logo da Empresa */}
+        <Card>
+          <div className="text-center space-y-4">
+            <h3 className="text-lg font-semibold text-textPrimary flex items-center justify-center gap-2">
+              <ImageIcon size={20} />
+              Logo da Empresa
+            </h3>
+            
+            {/* Upload de Imagem */}
+            <div
+              className={`relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 ${
+                dragActive 
+                  ? 'border-primary bg-primary/5 scale-105' 
+                  : 'border-footer hover:border-primary/50 hover:bg-primary/5'
+              }`}
+              onDrop={handleImageDrop}
+              onDragOver={handleImageDragOver}
+              onDragLeave={handleImageDragLeave}
+            >
+              {imagePreview ? (
+                <div className="space-y-4">
+                  <div className="mx-auto w-32 h-32 rounded-lg overflow-hidden bg-footer">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline" size="sm" onClick={removeImage}>
+                      Remover
+                    </Button>
+                    <label className="cursor-pointer">
+                      <Button variant="ghost" size="sm" icon={Upload}>
+                        Alterar
+                      </Button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Upload className="text-primary" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-textPrimary font-medium">
+                      Arraste uma imagem ou clique para fazer upload
+                    </p>
+                    <p className="text-textSecondary text-sm mt-1">
+                      PNG, JPG, WebP ou SVG até 5MB
+                    </p>
+                  </div>
+                  <label className="cursor-pointer">
+                    <Button variant="outline" icon={Upload}>
+                      Escolher Arquivo
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Seção: Informações Básicas */}
+        <Card>
+          <h3 className="text-lg font-semibold text-textPrimary mb-6 flex items-center gap-2">
+            <Building2 size={20} />
+            Informações da Empresa
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <InputField
+                label="CNPJ/CPF"
+                name="cpfCnpj"
+                placeholder="00.000.000/0000-00"
+                value={fields.cpfCnpj}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("cpfCnpj") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+
+            <div>
+              <InputField
+                label="Razão Social"
+                name="name"
+                placeholder="Nome oficial da empresa"
+                value={fields.name}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("name") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+
+            <div>
+              <InputField
+                label="Nome Fantasia"
+                name="tradeName"
+                placeholder="Nome comercial"
+                value={fields.tradeName}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("tradeName") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+
+            <div>
+              <InputField
+                label="E-mail"
+                name="email"
+                type="email"
+                placeholder="contato@empresa.com"
+                value={fields.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("email") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+
+            <div>
+              <InputField
+                label="Telefone"
+                name="phone"
+                placeholder="(11) 99999-9999"
+                value={fields.phone}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("phone") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Seção: Endereço */}
+        <Card>
+          <h3 className="text-lg font-semibold text-textPrimary mb-6">
+            Endereço
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <InputField
+                label="Rua/Avenida"
+                name="street"
+                placeholder="Nome da rua"
+                value={fields.street}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("street") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+
+            <div>
+              <InputField
+                label="Número"
+                name="number"
+                placeholder="123"
+                value={fields.number}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("number") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+
+            <div>
+              <InputField
+                label="Bairro"
+                name="neighborhood"
+                placeholder="Centro"
+                value={fields.neighborhood}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("neighborhood") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+
+            <div>
+              <InputField
+                label="Cidade"
+                name="city"
+                placeholder="São Paulo"
+                value={fields.city}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                className="focus:ring-primary text-textPrimary bg-background"
+              />
+              {isEmpty("city") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+            </div>
+
+            <div>
+              <InputField
+                label="UF"
+                name="uf"
+                placeholder="SP"
+                value={fields.uf}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                maxLength={2}
+                className="focus:ring-primary text-textPrimary bg-background uppercase"
+              />
+              {isEmpty("uf") && (
+                <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>
+              )}
+              {fields.uf && fields.uf.length !== 2 && touched.uf && (
+                <span className="text-danger text-sm mt-1 block">UF deve ter 2 caracteres</span>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Mensagens de Feedback */}
+        {error && (
+          <Card className="bg-danger/10 border-danger/20">
+            <div className="text-danger text-sm">
+              ⚠️ {error}
+            </div>
+          </Card>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-x-8 gap-y-6 bg-surface p-10 rounded-lg shadow-md">
-          <h2 className="col-span-2 text-3xl font-bold text-center mb-6 text-textPrimary">
-            Cadastro de Empresa
-          </h2>
-
-          {/* Mensagens de feedback */}
-          {error && (
-            <div className="col-span-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="col-span-2 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+        {success && (
+          <Card className="bg-success/10 border-success/20">
+            <div className="text-success text-sm">
               ✅ Empresa cadastrada com sucesso! Redirecionando...
             </div>
-          )}
+          </Card>
+        )}
 
-            {/* Razão Social */}
-            <DefaultColumn>
-            <InputField
-              label="Razão Social:"
-              name="name"
-              placeholder="Digite a razão social da empresa"
-              value={fields.name}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("name") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            </DefaultColumn>
-
-            {/* Nome Fantasia */}
-            <DefaultColumn>
-            <InputField
-              label="Nome Fantasia:"
-              name="tradeName"
-              placeholder="Digite o nome fantasia"
-              value={fields.tradeName}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("tradeName") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            </DefaultColumn>
-
-            {/* CNPJ */}
-            <DefaultColumn>
-            <InputField
-              label="CNPJ:"
-              name="cpfCnpj"
-              placeholder="00.000.000/0000-00"
-              value={fields.cpfCnpj}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              maxLength={18}
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("cpfCnpj") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            {fields.cpfCnpj && !isValidCNPJ(fields.cpfCnpj) && touched.cpfCnpj && (
-              <span className="text-danger text-sm">CNPJ inválido</span>
-            )}
-            </DefaultColumn>
-
-            {/* Email */}
-            <DefaultColumn>
-            <InputField
-              label="Email:"
-              name="email"
-              placeholder="empresa@email.com"
-              value={fields.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              type="email"
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("email") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            {fields.email && !isValidEmail(fields.email) && touched.email && (
-              <span className="text-danger text-sm">Email inválido</span>
-            )}
-            </DefaultColumn>
-
-            {/* Telefone */}
-            <DefaultColumn>
-            <InputField
-              label="Telefone:"
-              name="phone"
-              placeholder="(99) 99999-9999"
-              value={fields.phone}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              maxLength={15}
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("phone") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            </DefaultColumn>
-
-            {/* Rua */}
-            <DefaultColumn>
-            <InputField
-              label="Rua:"
-              name="street"
-              placeholder="Digite a rua"
-              value={fields.street}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("street") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            </DefaultColumn>
-
-            {/* Número */}
-            <DefaultColumn>
-            <InputField
-              label="Número:"
-              name="number"
-              placeholder="Digite o número"
-              value={fields.number}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("number") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            </DefaultColumn>
-
-            {/* Bairro */}
-            <DefaultColumn>
-            <InputField
-              label="Bairro:"
-              name="neighborhood"
-              placeholder="Digite o bairro"
-              value={fields.neighborhood}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("neighborhood") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            </DefaultColumn>
-
-            {/* Cidade */}
-            <DefaultColumn>
-            <InputField
-              label="Cidade:"
-              name="city"
-              placeholder="Digite a cidade"
-              value={fields.city}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              className="focus:ring-primary text-textPrimary bg-background"
-            />
-            {isEmpty("city") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            </DefaultColumn>
-
-            {/* UF */}
-            <DefaultColumn>
-            <InputField
-              label="UF:"
-              name="uf"
-              placeholder="UF"
-              value={fields.uf}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              maxLength={2}
-              className="focus:ring-primary text-textPrimary bg-background uppercase"
-            />
-            {isEmpty("uf") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-            {fields.uf && fields.uf.length !== 2 && touched.uf && (
-              <span className="text-danger text-sm">UF deve ter 2 caracteres</span>
-            )}
-            </DefaultColumn>
-          
-          <div className="col-span-2 w-full mt-6 flex gap-4 justify-end">
-            <button
+        {/* Botões de Ação */}
+        <Card>
+          <div className="flex flex-col sm:flex-row gap-4 justify-end">
+            <Button
               type="button"
-              className="w-full bg-red-600 text-background px-6 py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
-              onClick={() => window.location.href = "/listaempresas"}
+              variant="outline"
+              onClick={handleClearForm}
               disabled={loading}
+              icon={X}
             >
-              Voltar
-            </button>
-
-            <button
+              Limpar Formulário
+            </Button>
+            <Button
               type="submit"
-              className="w-full bg-primary text-background px-6 py-3 rounded-lg hover:bg-secondary transition disabled:opacity-50"
-              disabled={loading}
+              variant="primary"
+              loading={loading}
+              icon={Save}
+              size="lg"
             >
-              {loading ? 'Cadastrando...' : 'Cadastrar Empresa'}
-            </button>
+              Cadastrar Empresa
+            </Button>
           </div>
-        </form>
-      </div>
+        </Card>
+      </form>
     </PageLayout>
   );
 };
-
-type DefaultColumnProps = {
-  children: React.ReactNode;
-};
-
-const DefaultColumn = ({ children }: DefaultColumnProps) => (
-  <div>
-    {children}
-  </div>
-);
 
 export default CadastroEmpresa;
