@@ -5,6 +5,7 @@ import PageLayout from '../../components/PageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import StatsCard from '../../components/StatsCard';
+import AccessibilityPanel from '../../components/AccessibilityPanel';
 
 interface ContractData {
     name: string;
@@ -334,6 +335,9 @@ const DashBoard: React.FC = () => {
                     </div>
                 </div>
             </Card>
+
+            {/* Painel de Acessibilidade */}
+            <AccessibilityPanel />
         </PageLayout>
     );
 };

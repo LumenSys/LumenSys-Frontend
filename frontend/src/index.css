@@ -2,8 +2,8 @@
 
   @tailwind base;
   @tailwind components;
-  @tailwind utilities;
-
+  @tailwind utilities; 
+  
   @layer base {
     html {
       --font-size: 10px;
@@ -38,6 +38,89 @@
 
     }
 
+  }
+
+  /* Filtros de Acessibilidade */
+  .accessibility-grayscale {
+    filter: grayscale(100%);
+  }
+
+  .accessibility-protanopia {
+    filter: url('#protanopia-filter');
+  }
+
+  .accessibility-deuteranopia {
+    filter: url('#deuteranopia-filter');
+  }
+
+  .accessibility-tritanopia {
+    filter: url('#tritanopia-filter');
+  }
+
+  .accessibility-high-contrast {
+    filter: contrast(150%) brightness(1.2);
+  }
+
+  /* Tamanhos de Fonte */
+  .font-size-small {
+    --font-size: 12px;
+  }
+
+  .font-size-normal {
+    --font-size: 14px;
+  }
+
+  .font-size-large {
+    --font-size: 16px;
+  }
+
+  .font-size-extra-large {
+    --font-size: 18px;
+  }
+
+  /* Aplicar tamanhos de fonte de forma escalável */
+  .font-size-small * {
+    font-size: calc(var(--font-size) * 0.85) !important;
+  }
+
+  .font-size-large * {
+    font-size: calc(var(--font-size) * 1.15) !important;
+  }
+
+  .font-size-extra-large * {
+    font-size: calc(var(--font-size) * 1.3) !important;
+  }
+
+  /* Garantir que elementos de interface não quebrem */
+  .font-size-large input,
+  .font-size-large button,
+  .font-size-large select,
+  .font-size-large textarea,
+  .font-size-extra-large input,
+  .font-size-extra-large button,
+  .font-size-extra-large select,
+  .font-size-extra-large textarea {
+    padding: 0.5rem 0.75rem !important;
+    min-height: 2.5rem !important;
+  }
+
+  /* Ajustar espaçamentos para fontes maiores */
+  .font-size-large .space-y-4 > * + *,
+  .font-size-extra-large .space-y-4 > * + * {
+    margin-top: 1.25rem !important;
+  }
+
+  .font-size-large .space-y-6 > * + *,
+  .font-size-extra-large .space-y-6 > * + * {
+    margin-top: 1.75rem !important;
+  }
+
+  /* Filtros SVG para Daltonismo */
+  .accessibility-filters {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
   }
     
     
