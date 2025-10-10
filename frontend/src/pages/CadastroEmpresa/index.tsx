@@ -20,6 +20,8 @@ type CompanyData = {
   city: string;
   uf: string;
   logo?: File | null;
+  logoBase64?: string | null;
+  logoMimeType?: string | null;
 };
 
 const initialFields: CompanyData = {
@@ -34,17 +36,67 @@ const initialFields: CompanyData = {
   city: "",
   uf: "",
   logo: null,
+  logoBase64: null,
+  logoMimeType: null,
+};
+
+// Componente para exibir logo da empresa
+interface CompanyLogoProps {
+  logoBase64?: string;
+  logoMimeType?: string;
+  companyName: string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+const CompanyLogo: React.FC<CompanyLogoProps> = ({ 
+  logoBase64, 
+  logoMimeType, 
+  companyName, 
+  size = 'md',
+  className = '' 
+}) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-16 h-16',
+    lg: 'w-32 h-32'
+  };
+
+  // Função para converter Base64 para URL de imagem
+  const base64ToImageUrl = (base64: string, mimeType: string): string => {
+    return `data:${mimeType};base64,${base64}`;
+  };
+
+  if (logoBase64 && logoMimeType) {
+    const imageUrl = base64ToImageUrl(logoBase64, logoMimeType);
+    return (
+      <img 
+        src={imageUrl} 
+        alt={`Logo da ${companyName}`}
+        className={`${sizeClasses[size]} object-cover rounded-lg ${className}`}
+      />
+    );
+  }
+
+  // Fallback quando não há imagem
+  return (
+    <div className={`${sizeClasses[size]} bg-gray-200 rounded-lg flex items-center justify-center ${className}`}>
+      <Building2 className="text-gray-400" size={size === 'sm' ? 16 : size === 'md' ? 24 : 32} />
+    </div>
+  );
 };
 
 const CadastroEmpresa = () => {
   const api = ApiService();
   
-  // 📝 Carregar dados salvos dos cookies ao inicializar
+  // Estados do componente
   const [fields, setFields] = useState<CompanyData>(() => {
     const savedData = Cookies.get('companyFormData');
     if (savedData) {
       try {
-        return JSON.parse(savedData);
+        const parsedData = JSON.parse(savedData);
+        // Garantir que os novos campos existam
+        return { ...initialFields, ...parsedData };
       } catch (error) {
         console.error('Erro ao carregar dados salvos:', error);
         return initialFields;
@@ -60,38 +112,59 @@ const CadastroEmpresa = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
-  // 💾 Salvar dados no cookie sempre que os campos mudarem
+  // Função para converter File para Base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  // Função para converter Base64 para URL de imagem
+  const base64ToImageUrl = (base64: string, mimeType: string): string => {
+    return `data:${mimeType};base64,${base64}`;
+  };
+
+  // Salvar dados no cookie sempre que os campos mudarem
   useEffect(() => {
-    const hasData = Object.values(fields).some(value => value !== null && value !== undefined && typeof value === "string" ? value.trim() !== "" : !!value);
+    const hasData = Object.values(fields).some(value => {
+      if (value === null || value === undefined) return false;
+      if (typeof value === "string") return value.trim() !== "";
+      if (value instanceof File) return true;
+      return !!value;
+    });
     
     if (hasData) {
-      // Salvar dados no cookie por 24 horas
-      Cookies.set('companyFormData', JSON.stringify(fields), { 
-        expires: 1, // 1 dia
-        secure: true, // Usar HTTPS em produção
-        sameSite: 'strict' // Proteção CSRF
+      // Não salvar arquivo no cookie, apenas os outros dados
+      const dataToSave = { ...fields };
+      delete dataToSave.logo; // Remover arquivo do cookie
+      
+      Cookies.set('companyFormData', JSON.stringify(dataToSave), { 
+        expires: 1,
+        secure: true,
+        sameSite: 'strict'
       });
     } else {
-      // Remover cookie se todos os campos estiverem vazios
       Cookies.remove('companyFormData');
     }
   }, [fields]);
 
-  // 🕒 Controlar sessão do usuário
+  // Controlar sessão do usuário
   useEffect(() => {
-    // Registrar quando o usuário visitou esta página
     Cookies.set('lastVisitedPage', 'cadastro-empresa', { expires: 7 });
     Cookies.set('lastActivity', new Date().toISOString(), { expires: 1 });
 
-    // Verificar se há um token de autenticação
     const authToken = Cookies.get('authToken');
     if (!authToken) {
       console.warn('⚠️ Usuário não autenticado');
-      // Opcional: redirecionar para login
-      // window.location.href = '/login';
     }
 
-    // Carregar preferências do usuário
     const userPreferences = Cookies.get('userPreferences');
     if (userPreferences) {
       try {
@@ -105,8 +178,6 @@ const CadastroEmpresa = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
-    // Aplicar máscaras específicas
     let formattedValue = value;
 
     if (name === 'cpfCnpj') {
@@ -136,13 +207,11 @@ const CadastroEmpresa = () => {
 
   const isEmpty = (key: keyof CompanyData) => touched[key] && !fields[key];
 
-  // Validação de CNPJ
   const isValidCNPJ = (cnpj: string) => {
     const cleanCNPJ = cnpj.replace(/\D/g, '');
     return cleanCNPJ.length === 14;
   };
 
-  // Validação de email
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -150,10 +219,15 @@ const CadastroEmpresa = () => {
 
   const validateForm = () => {
     const errors: string[] = [];
+    const requiredFields: (keyof CompanyData)[] = [
+      'cpfCnpj', 'name', 'tradeName', 'email', 'phone', 
+      'street', 'number', 'neighborhood', 'city', 'uf'
+    ];
 
-    Object.entries(fields).forEach(([key, value]) => {
-      if (typeof value === "string" ? value.trim() === "" : value == null) {
-        errors.push(`${getFieldLabel(key as keyof CompanyData)} é obrigatório`);
+    requiredFields.forEach(key => {
+      const value = fields[key];
+      if (!value || (typeof value === "string" && value.trim() === "")) {
+        errors.push(`${getFieldLabel(key)} é obrigatório`);
       }
     });
 
@@ -172,8 +246,8 @@ const CadastroEmpresa = () => {
     return errors;
   };
 
-  const getFieldLabel = (key: keyof CompanyData) => {
-    const labels = {
+  const getFieldLabel = (key: keyof CompanyData): string => {
+    const labels: Record<keyof CompanyData, string> = {
       cpfCnpj: 'CNPJ',
       name: 'Razão Social',
       tradeName: 'Nome Fantasia',
@@ -184,14 +258,15 @@ const CadastroEmpresa = () => {
       neighborhood: 'Bairro',
       city: 'Cidade',
       uf: 'UF',
-      logo: 'Logo da Empresa'
+      logo: 'Logo da Empresa',
+      logoBase64: 'Logo Base64',
+      logoMimeType: 'Tipo da Imagem'
     };
     return labels[key];
   };
 
-  // Funções para lidar com upload de imagem
-  const handleImageUpload = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+  const handleImageUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
       setError('A imagem deve ter no máximo 5MB');
       return;
     }
@@ -202,15 +277,26 @@ const CadastroEmpresa = () => {
       return;
     }
 
-    setFields(prev => ({ ...prev, logo: file }));
-    
-    // Criar preview da imagem
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-    setError(null);
+    try {
+      const base64 = await fileToBase64(file);
+      
+      setFields(prev => ({ 
+        ...prev, 
+        logo: file,
+        logoBase64: base64,
+        logoMimeType: file.type
+      }));
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError(null);
+    } catch (error) {
+      setError('Erro ao processar a imagem');
+      console.error('Erro ao converter imagem:', error);
+    }
   };
 
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -234,7 +320,12 @@ const CadastroEmpresa = () => {
   };
 
   const removeImage = () => {
-    setFields(prev => ({ ...prev, logo: null }));
+    setFields(prev => ({ 
+      ...prev, 
+      logo: null,
+      logoBase64: null,
+      logoMimeType: null
+    }));
     setImagePreview(null);
   };
 
@@ -252,30 +343,34 @@ const CadastroEmpresa = () => {
 
     try {
       const companyData = {
-        ...fields,
         cpfCnpj: fields.cpfCnpj.replace(/\D/g, ''),
+        name: fields.name,
+        tradeName: fields.tradeName,
+        email: fields.email,
         phone: fields.phone.replace(/\D/g, ''),
+        street: fields.street,
+        number: fields.number,
+        neighborhood: fields.neighborhood,
+        city: fields.city,
+        uf: fields.uf,
+        logoBase64: fields.logoBase64 || null,
+        logoMimeType: fields.logoMimeType || null
       };
 
       const response = await api.post('api/v1/Company', companyData);
 
-      // 🎉 Sucesso - Gerenciar cookies
-      
-      // 1. Remover dados temporários do formulário
+      // Gerenciar cookies de sucesso
       Cookies.remove('companyFormData');
       
-      // 2. Salvar informações de sucesso
       Cookies.set('lastCompanyRegistered', JSON.stringify({
         name: fields.name,
         tradeName: fields.tradeName,
         registeredAt: new Date().toISOString()
-      }), { expires: 30 }); // 30 dias
+      }), { expires: 30 });
       
-      // 3. Incrementar contador de empresas cadastradas
       const companiesCount = parseInt(Cookies.get('companiesRegisteredCount') || '0');
       Cookies.set('companiesRegisteredCount', (companiesCount + 1).toString(), { expires: 365 });
       
-      // 4. Salvar estatísticas do usuário
       const userStats = {
         lastAction: 'company_registered',
         lastActionDate: new Date().toISOString(),
@@ -286,14 +381,13 @@ const CadastroEmpresa = () => {
       setSuccess(true);
       setFields(initialFields);
       setTouched({});
+      setImagePreview(null);
 
-      // Mostrar mensagem de sucesso por 3 segundos antes de redirecionar
       setTimeout(() => {
         window.location.href = "/listaempresas";
       }, 3000);
 
     } catch (err: any) {
-      // 🔥 Erro - Salvar para debug
       const errorInfo = {
         timestamp: new Date().toISOString(),
         error: err.response?.data?.message || err.message,
@@ -302,23 +396,42 @@ const CadastroEmpresa = () => {
       };
       
       Cookies.set('lastError', JSON.stringify(errorInfo), { expires: 7 });
-      
       setError(err.response?.data?.message || 'Erro ao cadastrar empresa');
     } finally {
       setLoading(false);
     }
   };
 
-  // 🧹 Função para limpar formulário e cookies
   const handleClearForm = () => {
     setFields(initialFields);
     setTouched({});
     setError(null);
     setSuccess(false);
+    setImagePreview(null);
     Cookies.remove('companyFormData');
   };
 
-  // 📊 Mostrar estatísticas do usuário (opcional)
+  // Função para buscar empresa e carregar imagem
+  const loadCompanyImage = async (companyId: string) => {
+    try {
+      const response = await api.get(`api/v1/Company/${companyId}`);
+      const company = response.data;
+      
+      if (company.logoBase64 && company.logoMimeType) {
+        const imageUrl = base64ToImageUrl(company.logoBase64, company.logoMimeType);
+        setImagePreview(imageUrl);
+        
+        setFields(prev => ({
+          ...prev,
+          logoBase64: company.logoBase64,
+          logoMimeType: company.logoMimeType
+        }));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar imagem da empresa:', error);
+    }
+  };
+
   const getUserStats = () => {
     const userStats = Cookies.get('userStats');
     if (userStats) {
