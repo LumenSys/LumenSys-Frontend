@@ -71,7 +71,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="pl-10 focus:ring-primary text-textPrimary bg-background"
+                className="focus:ring-primary text-textPrimary bg-background"
               />
             </div>
             
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="pl-10 focus:ring-primary text-textPrimary bg-background"
+                className="focus:ring-primary text-textPrimary bg-background"
               />
             </div>
           </div>

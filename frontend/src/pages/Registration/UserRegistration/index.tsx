@@ -35,7 +35,7 @@ export default function UserRegistration() {
       <Card className="w-full max-w-md shadow-2xl">
         <div className="text-center mb-8">
           <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
-            <User className="text-secondary" size={24} />
+            <User className="text-primary" size={24} />
           </div>
           <h1 className="text-3xl font-bold text-textPrimary mb-2">
             Criar Conta
@@ -56,7 +56,7 @@ export default function UserRegistration() {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
-                className="pl-10 focus:ring-secondary text-textPrimary bg-background"
+                className="focus:ring-secondary text-textPrimary bg-background"
               />
             </div>
 
@@ -70,7 +70,7 @@ export default function UserRegistration() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="pl-10 focus:ring-secondary text-textPrimary bg-background"
+                className="focus:ring-secondary text-textPrimary bg-background"
               />
             </div>
 
@@ -84,18 +84,18 @@ export default function UserRegistration() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="pl-10 focus:ring-secondary text-textPrimary bg-background"
+                className="focus:ring-secondary text-textPrimary bg-background"
               />
             </div>
           </div>
 
           <div className="text-xs text-textSecondary">
             Ao criar uma conta, você concorda com nossos{' '}
-            <button type="button" className="text-secondary underline hover:text-hoverButton2">
+            <button type="button" className="text-primary underline hover:text-hoverButton2">
               Termos de Serviço
             </button>{' '}
             e{' '}
-            <button type="button" className="text-secondary underline hover:text-hoverButton2">
+            <button type="button" className="text-primary underline hover:text-hoverButton2">
               Política de Privacidade
             </button>
             .
@@ -103,7 +103,7 @@ export default function UserRegistration() {
 
           <Button
             type="submit"
-            variant="secondary"
+            variant="primary"
             size="lg"
             loading={loading}
             className="w-full"
@@ -117,7 +117,7 @@ export default function UserRegistration() {
             Já possui uma conta?{' '}
             <button
               type="button"
-              className="text-secondary underline hover:text-hoverButton2 font-medium"
+              className="text-primary underline hover:text-hoverButton2 font-medium"
               onClick={() => navigate('/login')}
             >
               Fazer login

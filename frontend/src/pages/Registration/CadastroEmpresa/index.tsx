@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import InputField from '../../components/Input/InputField';
-import ApiService from '../../services/apiService';
+import InputField from '../../../components/Input/InputField';
+import ApiService from '../../../services/apiService';
 import Cookies from 'js-cookie';
-import PageLayout from '../../components/PageLayout';
-import Card from '../../components/Card';
-import Button from '../../components/Button';
+import PageLayout from '../../../components/PageLayout';
+import Card from '../../../components/Card';
+import Button from '../../../components/Button';
 import { Building2, Save, X, Upload, Image as ImageIcon } from 'lucide-react';
 
 // Tipo baseado no modelo Company da API
