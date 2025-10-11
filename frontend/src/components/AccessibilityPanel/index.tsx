@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Accessibility, Eye, Type, RotateCcw, X, Plus, Minus } from 'lucide-react';
+import { Accessibility, Eye, Type, RotateCcw, Plus, Minus } from 'lucide-react';
 import { useAccessibility, ColorFilter } from '../../context/AccessibilityContext';
 import Button from '../Button';
 import Card from '../Card';
+import BackButton from '../BackButton';
 
 const AccessibilityPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -109,12 +110,7 @@ const AccessibilityPanel: React.FC = () => {
                     Acessibilidade
                   </h3>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={X}
-                  onClick={() => setIsOpen(false)}
-                  aria-label="Fechar painel" children={undefined}                />
+                <BackButton kind="close" iconOnly onClick={() => setIsOpen(false)} />
               </div>
 
               {/* Controles de Tamanho da Fonte */}
@@ -132,7 +128,7 @@ const AccessibilityPanel: React.FC = () => {
                     onClick={decreaseFontSize}
                     disabled={isFontSizeMin()}
                     aria-label="Diminuir fonte"
-                    className="h-8 w-8 sm:h-10 sm:w-10" children={undefined}                  />
+                    className="h-8 w-8 sm:h-10 sm:w-10" children={undefined} />
 
                   <span className="text-xs sm:text-sm font-medium text-textPrimary px-2 sm:px-4 text-center">
                     {getFontSizeLabel()}
@@ -145,7 +141,7 @@ const AccessibilityPanel: React.FC = () => {
                     onClick={increaseFontSize}
                     disabled={isFontSizeMax()}
                     aria-label="Aumentar fonte"
-                    className="h-8 w-8 sm:h-10 sm:w-10" children={undefined}                  />
+                    className="h-8 w-8 sm:h-10 sm:w-10" children={undefined} />
                 </div>
               </div>
 
@@ -205,8 +201,8 @@ const AccessibilityPanel: React.FC = () => {
       </div>
 
       {/* Atalhos de teclado */}
-      <div 
-        className="sr-only" 
+      <div
+        className="sr-only"
         onKeyDown={(e) => {
           if (e.ctrlKey) {
             if (e.key === '+' || e.key === '=') {

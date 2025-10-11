@@ -4,7 +4,7 @@ export const routes =
             LOGIN:'/login',
             USERSIGNUP:'/usersignup',
             DASHBOARD:'/dashboard',
-            MANAGE_PLANS:'/GerenciarPlanos',
+            MANAGE_PLANS:'/gerenciarplanos',
             CADASTRO_EMPRESA: "/cadastroempresa",
             LIST_COMPANIES: "/listaempresas",
             SERVICOS: "/servicos",

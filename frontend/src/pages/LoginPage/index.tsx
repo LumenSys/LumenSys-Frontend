@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/apiService';
+import { isAxiosError } from 'axios';
 import InputField from '../../components/Input/InputField';
 import Cookies from 'js-cookie';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import BackButton from '../../components/BackButton';
 import { Lock, Mail } from 'lucide-react';
 
 export default function LoginPage() {
@@ -28,7 +30,7 @@ export default function LoginPage() {
         Cookies.set('token', token, { expires: rememberMe ? 7 : undefined });
       }
 
-        localStorage.setItem('email', email);
+      localStorage.setItem('email', email);
 
       if (rememberMe) {
         localStorage.setItem('remember', 'true');
@@ -37,9 +39,10 @@ export default function LoginPage() {
       }
 
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login falhou:', err);
-      alert(err.response?.data?.message || 'Falha ao realizar o login. Verifique suas credenciais.');
+      const msg = isAxiosError(err) ? err.response?.data?.message : undefined;
+      alert(msg || 'Falha ao realizar o login. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }
@@ -48,6 +51,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-background">
       <Card className="w-full max-w-md shadow-2xl">
+        <BackButton className="text-primary hover:text-secondary" />
+
         <div className="text-center mb-8">
           <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
             <Lock className="text-primary" size={24} />
@@ -74,7 +79,7 @@ export default function LoginPage() {
                 className="focus:ring-primary text-textPrimary bg-background"
               />
             </div>
-            
+
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-textSecondary" size={18} />
               <InputField
@@ -91,6 +96,7 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
+
               <input
                 id="remember"
                 type="checkbox"
@@ -102,7 +108,7 @@ export default function LoginPage() {
                 Lembrar-me
               </label>
             </div>
-            
+
             <button
               type="button"
               className="text-sm text-primary hover:text-secondary font-medium underline"

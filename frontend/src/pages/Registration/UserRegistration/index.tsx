@@ -4,7 +4,9 @@ import ApiService from '../../../services/apiService';
 import InputField from '../../../components/Input/InputField';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
+import BackButton from '../../../components/BackButton';
 import { User, Mail, Lock } from 'lucide-react';
+import { isAxiosError } from 'axios';
 
 export default function UserRegistration() {
   const [name, setName] = useState('');
@@ -22,9 +24,10 @@ export default function UserRegistration() {
       await api.post('api/user', { name, email, password });
       alert('Usuário cadastrado com sucesso!');
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Cadastro falhou:', err);
-      alert(err.response?.data?.message || 'Erro ao cadastrar. Tente novamente.');
+      const msg = isAxiosError(err) ? err.response?.data?.message : undefined;
+      alert(msg || 'Erro ao cadastrar. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -33,6 +36,8 @@ export default function UserRegistration() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/10 to-background">
       <Card className="w-full max-w-md shadow-2xl">
+        <BackButton className="text-primary hover:text-secondary" />
+
         <div className="text-center mb-8">
           <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
             <User className="text-primary" size={24} />

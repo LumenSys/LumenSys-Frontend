@@ -454,7 +454,7 @@ const CadastroEmpresa = () => {
         <Button
           variant="outline"
           icon={X}
-          onClick={() => window.location.href = "/listaempresas"}
+          onClick={() => window.location.href = "/ListaEmpresas"}
           disabled={loading}
         >
           Cancelar

@@ -3,10 +3,10 @@ import { Building2, FileText, Heart, Users, BarChart3 } from 'lucide-react';
 
 const menuItems = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-  { to: '/cadastroempresa', label: 'Empresas', icon: Building2 },
+  { to: '/CadastroEmpresa', label: 'Empresas', icon: Building2 },
   { to: '/GerenciarPlanos', label: 'Planos', icon: FileText },
-  { to: '/servicos', label: 'Serviços', icon: Heart },
-  { to: '/gerenciarcontratos', label: 'Contratos', icon: Users },
+  { to: '/Servicos', label: 'Serviços', icon: Heart },
+  { to: '/GerenciarContratos', label: 'Contratos', icon: Users },
 ];
 
 export default function Sidebar() {
