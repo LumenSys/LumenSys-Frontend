@@ -17,7 +17,7 @@ export default function Header() {
 
   return (
 
-    <header className="w-full bg-white/95 backdrop-blur-md border-b border-gray-100 text-textPrimary shadow-sm fixed top-0 z-50">
+    <header className="w-full bg-white/95 backdrop-blur-md border-b border-gray-100 text-textPrimary shadow-sm z-50">
       <div className="max-w-7xl flex items-center h-20 px-2">
         {/* Logo */}
         <div className="flex items-center justify-start flex-1 mr-8">

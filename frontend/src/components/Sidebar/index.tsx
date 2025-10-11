@@ -11,8 +11,8 @@ const menuItems = [
 
 export default function Sidebar() {
   return (
-    <div className="w-64 bg-surface text-textPrimary min-h-screen pt-20 p-6 border-r border-footer">
-      <div className="mb-8">
+    <div className="w-64 bg-surface text-textPrimary min-h-screen p-6 border-r border-footer">
+      <div className="mb-2">
 
       </div>
       <nav className="space-y-2">
