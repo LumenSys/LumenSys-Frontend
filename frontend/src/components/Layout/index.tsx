@@ -3,6 +3,7 @@ import Header from "../Header/index";
 import Footer from "../Footer/index";
 import Sidebar from "../Sidebar/index";
 import Breadcrumb from "../Breadcrumb/index";
+import AccessibilityPanel from '../../components/AccessibilityPanel';
 
 export default function Layout() {
   const location = useLocation();
@@ -20,7 +21,9 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
-      <Footer/>
+      <Footer />
+      <AccessibilityPanel />
     </div>
+          
   );
 }
