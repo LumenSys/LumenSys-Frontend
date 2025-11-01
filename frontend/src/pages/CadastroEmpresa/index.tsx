@@ -189,8 +189,9 @@ const CadastroEmpresa: React.FC = () => {
   const isEmpty = (key: keyof CompanyData) => !!(touched[key] && !fields[key]);
 
   const isValidCNPJ = (cnpj: string) => {
-    const clean = cnpj.replace(/\D/g, '');
-    return clean.length === 14;
+    const clean = (cnpj || '').replace(/\D/g, '');
+    // Aceita CPF (11) ou CNPJ (14)
+    return clean.length === 11 || clean.length === 14;
   };
 
   const isValidEmail = (email: string) => {
@@ -198,9 +199,15 @@ const CadastroEmpresa: React.FC = () => {
     return re.test(email);
   };
 
+  const isValidPhone = (phone: string) => {
+    const digits = (phone || '').replace(/\D/g, '');
+    // regra simples: aceitar 10 ou 11 dígitos (DDD + número)
+    return digits.length === 10 || digits.length === 11;
+  };
+
   const validateForm = () => {
     const errors: string[] = [];
-    const required: (keyof CompanyData)[] = ['cpfCnpj', 'companyName', 'tradeName', 'email', 'phone', 'street', 'number', 'neighborhood', 'city', 'uf'];
+    const required: (keyof CompanyData)[] = ['companyName', 'cpfCnpj', 'tradeName', 'email', 'phone', 'street', 'number', 'neighborhood', 'city', 'uf', 'companyLogo'];
 
     required.forEach(k => {
       const v = fields[k];
@@ -209,9 +216,10 @@ const CadastroEmpresa: React.FC = () => {
       }
     });
 
-    if (fields.cpfCnpj && !isValidCNPJ(fields.cpfCnpj)) errors.push('CNPJ deve ter 14 dígitos');
+    if (fields.cpfCnpj && !isValidCNPJ(fields.cpfCnpj)) errors.push('CPF deve ter 11 dígitos ou CNPJ 14 dígitos');
     if (fields.email && !isValidEmail(fields.email)) errors.push('Email deve ter um formato válido');
     if (fields.uf && fields.uf.length !== 2) errors.push('UF deve ter 2 caracteres');
+    if (fields.phone && !isValidPhone(fields.phone)) errors.push('Telefone inválido (use DDD + número).');
 
     return errors;
   };
@@ -287,29 +295,40 @@ const CadastroEmpresa: React.FC = () => {
 
     try {
       const payload: any = {
-        CpfCnpj: fields.cpfCnpj.replace(/\D/g, ''),
-        CompanyName: fields.companyName,
-        TradeName: fields.tradeName,
-        Email: fields.email,
-        Phone: fields.phone.replace(/\D/g, ''),
-        Street: fields.street,
-        Number: fields.number,
-        Neighborhood: fields.neighborhood,
-        City: fields.city,
-        UF: fields.uf.toUpperCase(),
-        CompanyLogo: null // será preenchido se houver imagem
+        // CpfCnpj sem formatação (apenas números)
+        CpfCnpj: (fields.cpfCnpj || '').replace(/\D/g, ''),
+        CompanyName: (fields.companyName || '').trim(),
+        TradeName: (fields.tradeName || '').trim(),
+        Email: (fields.email || '').trim(),
+        // enviar apenas números no telefone; enviar null se vazio
+        Phone: (fields.phone || '').replace(/\D/g, '') || null,
+        Street: (fields.street || '').trim(),
+        Number: (fields.number || '').trim(),
+        Neighborhood: (fields.neighborhood || '').trim(),
+        City: (fields.city || '').trim(),
+        UF: (fields.uf || '').trim().toUpperCase(),
+        CompanyLogo: null // preenchido abaixo se houver imagem
       };
 
       if (fields.companyLogo) {
-        // converter File -> base64
+        // File -> base64 (sem prefixo "data:*;base64,")
         const base64 = await fileToBase64(fields.companyLogo);
-        // enviar como string Base64 (backend pode converter para byte[])
+        // Opção 1 (recomendada): enviar string Base64 — .NET converte automaticamente para byte[].
         payload.CompanyLogo = base64;
+
+        // --- se o backend precisar receber explicitamente um array de bytes (number[]),
+        // você pode usar a alternativa abaixo em vez da linha acima:
+        // payload.CompanyLogo = ((): number[] => {
+        //   const binary = atob(base64);
+        //   const arr = new Uint8Array(binary.length);
+        //   for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+        //   return Array.from(arr);
+        // })();
       }
 
       await api.post('api/v1/Company', payload);
 
-      // ações pós-sucesso
+      // ações pós-sucesso (mantive seu fluxo)
       Cookies.remove('companyFormData');
       Cookies.set('lastCompanyRegistered', JSON.stringify({
         companyName: fields.companyName,
@@ -413,26 +432,17 @@ const CadastroEmpresa: React.FC = () => {
               <ImageIcon size={20} />
               Logo da Empresa
             </h3>
-
             <div
-              className={`relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 ${dragActive ? 'border-primary bg-primary/5 scale-105' : 'border-footer hover:border-primary/50 hover:bg-primary/5'}`}
+              className={`border-2 ${dragActive ? 'border-primary bg-primary/10' : 'border-dashed border-gray-300'} rounded-lg p-6 cursor-pointer`}
               onDrop={handleImageDrop}
               onDragOver={handleImageDragOver}
               onDragLeave={handleImageDragLeave}
-              onClick={openFilePicker}                /* abre o seletor ao clicar na área */
-              tabIndex={0}                            /* permite foco pelo teclado */
+              onClick={openFilePicker}
+              tabIndex={0}
               role="button"
               aria-label="Fazer upload do logo da empresa"
-              onKeyDown={handleWrapperKeyDown}        /* abre com Enter/Space */
+              onKeyDown={handleWrapperKeyDown}
             >
-              {/* input oculto reutilizável (abre o seletor do SO) */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
-              />
               {imagePreview ? (
                 <div className="space-y-4">
                   <div className="mx-auto w-32 h-32 rounded-lg overflow-hidden bg-footer">
@@ -455,10 +465,10 @@ const CadastroEmpresa: React.FC = () => {
                     <p className="text-textPrimary font-medium">Arraste uma imagem ou clique para fazer upload</p>
                     <p className="text-textSecondary text-sm mt-1">PNG, JPG, WebP ou SVG até 5MB</p>
                   </div>
-                  <label className="cursor-pointer">
-                    <Button variant="outline" icon={Upload}>Escolher Arquivo</Button>
-                    <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])} className="hidden" />
-                  </label>
+                  <button onClick={() => fileInputRef.current?.click()}>Escolher Arquivo</button>
+                  <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".png,.jpg,.jpeg,.webp,.svg" />
+
+                  <Button variant="ghost" size="sm" icon={Upload} onClick={openFilePicker}>Alterar</Button>
                 </div>
               )}
             </div>
