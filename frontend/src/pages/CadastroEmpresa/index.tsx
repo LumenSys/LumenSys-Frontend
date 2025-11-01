@@ -1,274 +1,553 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import InputField from '../../components/Input/InputField';
+import ApiService from '../../services/apiService';
+import Cookies from 'js-cookie';
+import PageLayout from '../../components/PageLayout';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import { Building2, Save, X, Upload, Image as ImageIcon } from 'lucide-react';
 
-const initialFields = {
-  nomeEmpresa: "",
-  razaoSocial: "",
-  cnpj: "",
-  email: "",
-  telefone: "",
-  cidade: "",
-  rua: "",
-  bairro: "",
-  numero: "",
-  uf: "",
+// Tipo interno do formulário
+type CompanyData = {
+  cpfCnpj: string;
+  companyName: string; // mapeado para CompanyName no backend
+  tradeName: string;
+  email: string;
+  phone: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  uf: string; // será enviado como UF (maiúsculo)
+  companyLogo?: File | null; // File para preview / envio como Base64
 };
 
-const FormElementInput = () => {
-  const [fields, setFields] = useState(initialFields);
-  const [touched, setTouched] = useState<{ [K in keyof typeof initialFields]?: boolean }>({});
+const initialFields: CompanyData = {
+  cpfCnpj: "",
+  companyName: "",
+  tradeName: "",
+  email: "",
+  phone: "",
+  street: "",
+  number: "",
+  neighborhood: "",
+  city: "",
+  uf: "",
+  companyLogo: null,
+};
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFields({ ...fields, [e.target.name]: e.target.value });
+// Componente reutilizável para mostrar logo (aceita Base64 string vindo do backend)
+export interface CompanyLogoDisplayProps {
+  companyLogoBytes?: string | null; // base64 string
+  companyName: string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+export const CompanyLogoDisplay: React.FC<CompanyLogoDisplayProps> = ({
+  companyLogoBytes,
+  companyName,
+  size = 'md',
+  className = ''
+}) => {
+  const sizeClasses: Record<string, string> = {
+    sm: 'w-8 h-8',
+    md: 'w-16 h-16',
+    lg: 'w-32 h-32'
   };
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    setTouched({ ...touched, [e.target.name]: true });
-  };
-
-  const isEmpty = (key: keyof typeof initialFields) => touched[key] && !fields[key];
-  const isFilled = (key: keyof typeof initialFields) => fields[key] && touched[key];
+  if (companyLogoBytes) {
+    const imageUrl = `data:image/jpeg;base64,${companyLogoBytes}`;
+    return (
+      <img
+        src={imageUrl}
+        alt={`Logo da ${companyName}`}
+        className={`${sizeClasses[size]} object-cover rounded-lg ${className}`}
+      />
+    );
+  }
 
   return (
-    <section className="py-12 dark:bg-dark flex items-center justify-center min-h-screen">
-      <div className="container max-w-5xl mx-auto"> {/* Aumentamos o tamanho do container */}
-        <form className="grid grid-cols-2 gap-x-8 gap-y-6 bg-white dark:bg-dark-2 p-10 rounded-lg shadow-md">
-          <h2 className="col-span-2 text-3xl font-bold text-center mb-6 text-textPrimary"> {/* Centralizando e ajustando o título */}
-            Cadastro de Empresa
-          </h2>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Nome da empresa:
-            </label>
-            <input
-              type="text"
-              name="nomeEmpresa"
-              placeholder="Digite o nome da empresa"
-              value={fields.nomeEmpresa}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("nomeEmpresa") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("nomeEmpresa") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Razão Social:
-            </label>
-            <input
-              type="text"
-              name="razaoSocial"
-              placeholder="Razão Social"
-              value={fields.razaoSocial}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("razaoSocial") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("razaoSocial") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              CNPJ:
-            </label>
-            <input
-              type="text"
-              name="cnpj"
-              placeholder="Digite o CNPJ da empresa"
-              value={fields.cnpj}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("cnpj") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("cnpj") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Email:
-            </label>
-            <input
-              type="email"
-              name="email"
-              placeholder="Digite o email da empresa"
-              value={fields.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("email") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("email") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Telefone:
-            </label>
-            <input
-              type="text"
-              name="telefone"
-              placeholder="(99) 99999-9999"
-              value={fields.telefone}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("telefone") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("telefone") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Cidade:
-            </label>
-            <input
-              type="text"
-              name="cidade"
-              placeholder="Digite sua cidade"
-              value={fields.cidade}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("cidade") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("cidade") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Rua:
-            </label>
-            <input
-              type="text"
-              name="rua"
-              placeholder="Digite sua rua"
-              value={fields.rua}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("rua") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("rua") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Bairro:
-            </label>
-            <input
-              type="text"
-              name="bairro"
-              placeholder="Digite seu bairro"
-              value={fields.bairro}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("bairro") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("bairro") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              Número:
-            </label>
-            <input
-              type="text"
-              name="numero"
-              placeholder="Digite o número"
-              value={fields.numero}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("numero") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("numero") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <DefaultColumn>
-            <label className="mb-2 block text-base font-medium text-textPrimary">
-              UF:
-            </label>
-            <input
-              type="text"
-              name="uf"
-              placeholder="Digite sua UF"
-              value={fields.uf}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full bg-transparent rounded-md border py-[10px] px-5 text-dark-6 outline-none transition focus:border-primary
-                ${isFilled("uf") ? "border-green-500" : "border-stroke dark:border-dark-3"}
-              `}
-            />
-            {isEmpty("uf") && (
-              <span className="text-danger text-sm">Campo obrigatório</span>
-            )}
-          </DefaultColumn>
-
-          <div className="col-span-2 w-full mt-6 flex gap-4 justify-end">
-            {/* Botão "Voltar" */}
-            <button
-              type="button"
-              className="w-full bg-red-600 text-background px-6 py-3 rounded-lg hover:bg-red-700 transition"
-              onClick={() => window.location.href = "/"}
-            >
-              Voltar
-            </button>
-
-            {/* Botão "Enviar" */}
-            <button
-              type="submit"
-              className="w-full bg-secondary text-background px-6 py-3 rounded-lg hover:bg-hoverButton transition"
-            >
-              Enviar
-            </button>
-          </div>
-        </form>
-      </div>
-    </section>
+    <div className={`${sizeClasses[size]} bg-gray-200 rounded-lg flex items-center justify-center ${className}`}>
+      <Building2 className="text-gray-400" size={size === 'sm' ? 16 : size === 'md' ? 24 : 32} />
+    </div>
   );
 };
 
-type DefaultColumnProps = {
-  children: React.ReactNode;
+const CadastroEmpresa: React.FC = () => {
+  const api = ApiService();
+
+  const [fields, setFields] = useState<CompanyData>(() => {
+    const savedData = Cookies.get('companyFormData');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        return { ...initialFields, ...parsed };
+      } catch {
+        return initialFields;
+      }
+    }
+    return initialFields;
+  });
+
+  const [touched, setTouched] = useState<{ [K in keyof CompanyData]?: boolean }>({});
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleWrapperKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openFilePicker();
+    }
+  };
+
+  // Converte File -> base64 (DataURL) e retorna apenas a parte base64 (sem prefix)
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const res = reader.result as string;
+        const base64 = res.split(',')[1] ?? '';
+        resolve(base64);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  // Converte um array de bytes (se backend retornar array numbers) para base64
+  const byteArrayToBase64 = (arr: number[] | Uint8Array): string => {
+    const u8 = arr instanceof Uint8Array ? arr : new Uint8Array(arr);
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < u8.length; i += chunk) {
+      binary += String.fromCharCode(...u8.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  };
+
+  // Salva dados no cookie (não salvar o File)
+  useEffect(() => {
+    const hasData = Object.values(fields).some(v => {
+      if (v === null || v === undefined) return false;
+      if (typeof v === 'string') return v.trim() !== '';
+      if (v instanceof File) return false; // não conta para persistência
+      return !!v;
+    });
+
+    if (hasData) {
+      const dataToSave: Partial<CompanyData> = { ...fields };
+      delete (dataToSave as any).companyLogo; // remover File do cookie
+      Cookies.set('companyFormData', JSON.stringify(dataToSave), { expires: 1, secure: true, sameSite: 'strict' });
+    } else {
+      Cookies.remove('companyFormData');
+    }
+  }, [fields]);
+
+  useEffect(() => {
+    Cookies.set('lastVisitedPage', 'cadastro-empresa', { expires: 7 });
+    Cookies.set('lastActivity', new Date().toISOString(), { expires: 1 });
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    let formatted = value;
+
+    if (name === 'cpfCnpj') {
+      formatted = value
+        .replace(/\D/g, '')
+        .replace(/^(\d{2})(\d)/, '$1.$2')
+        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2')
+        .substring(0, 18);
+    } else if (name === 'phone') {
+      formatted = value
+        .replace(/\D/g, '')
+        .replace(/^(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2')
+        .substring(0, 15);
+    } else if (name === 'uf') {
+      formatted = value.toUpperCase().substring(0, 2);
+    }
+
+    setFields(prev => ({ ...prev, [name]: formatted } as CompanyData));
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setTouched(prev => ({ ...prev, [e.target.name]: true }));
+  };
+
+  const isEmpty = (key: keyof CompanyData) => !!(touched[key] && !fields[key]);
+
+  const isValidCNPJ = (cnpj: string) => {
+    const clean = (cnpj || '').replace(/\D/g, '');
+    // Aceita CPF (11) ou CNPJ (14)
+    return clean.length === 11 || clean.length === 14;
+  };
+
+  const isValidEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const isValidPhone = (phone: string) => {
+    const digits = (phone || '').replace(/\D/g, '');
+    // regra simples: aceitar 10 ou 11 dígitos (DDD + número)
+    return digits.length === 10 || digits.length === 11;
+  };
+
+  const validateForm = () => {
+    const errors: string[] = [];
+    const required: (keyof CompanyData)[] = ['companyName', 'cpfCnpj', 'tradeName', 'email', 'phone', 'street', 'number', 'neighborhood', 'city', 'uf', 'companyLogo'];
+
+    required.forEach(k => {
+      const v = fields[k];
+      if (!v || (typeof v === 'string' && v.trim() === '')) {
+        errors.push(`${getFieldLabel(k)} é obrigatório`);
+      }
+    });
+
+    if (fields.cpfCnpj && !isValidCNPJ(fields.cpfCnpj)) errors.push('CPF deve ter 11 dígitos ou CNPJ 14 dígitos');
+    if (fields.email && !isValidEmail(fields.email)) errors.push('Email deve ter um formato válido');
+    if (fields.uf && fields.uf.length !== 2) errors.push('UF deve ter 2 caracteres');
+    if (fields.phone && !isValidPhone(fields.phone)) errors.push('Telefone inválido (use DDD + número).');
+
+    return errors;
+  };
+
+  const getFieldLabel = (key: keyof CompanyData): string => {
+    const labels: Record<keyof CompanyData, string> = {
+      cpfCnpj: 'CNPJ',
+      companyName: 'Razão Social',
+      tradeName: 'Nome Fantasia',
+      email: 'Email',
+      phone: 'Telefone',
+      street: 'Rua',
+      number: 'Número',
+      neighborhood: 'Bairro',
+      city: 'Cidade',
+      uf: 'UF',
+      companyLogo: 'Logo da Empresa'
+    };
+    return labels[key];
+  };
+
+  // Upload / preview
+  const handleImageUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setError('A imagem deve ter no máximo 5MB');
+      return;
+    }
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!allowed.includes(file.type)) {
+      setError('Formato de imagem não suportado. Use JPEG, PNG, WebP ou SVG');
+      return;
+    }
+    setFields(prev => ({ ...prev, companyLogo: file }));
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+    setError(null);
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragActive(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) handleImageUpload(f);
+  };
+
+  const handleImageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleImageDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const removeImage = () => {
+    setFields(prev => ({ ...prev, companyLogo: null }));
+    setImagePreview(null);
+  };
+
+  // Submissão -> montar payload com chaves que o backend espera (PascalCase)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(', '));
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const payload: any = {
+        // CpfCnpj sem formatação (apenas números)
+        CpfCnpj: (fields.cpfCnpj || '').replace(/\D/g, ''),
+        CompanyName: (fields.companyName || '').trim(),
+        TradeName: (fields.tradeName || '').trim(),
+        Email: (fields.email || '').trim(),
+        // enviar apenas números no telefone; enviar null se vazio
+        Phone: (fields.phone || '').replace(/\D/g, '') || null,
+        Street: (fields.street || '').trim(),
+        Number: (fields.number || '').trim(),
+        Neighborhood: (fields.neighborhood || '').trim(),
+        City: (fields.city || '').trim(),
+        UF: (fields.uf || '').trim().toUpperCase(),
+        CompanyLogo: null // preenchido abaixo se houver imagem
+      };
+
+      if (fields.companyLogo) {
+        // File -> base64 (sem prefixo "data:*;base64,")
+        const base64 = await fileToBase64(fields.companyLogo);
+        // Opção 1 (recomendada): enviar string Base64 — .NET converte automaticamente para byte[].
+        payload.CompanyLogo = base64;
+
+        // --- se o backend precisar receber explicitamente um array de bytes (number[]),
+        // você pode usar a alternativa abaixo em vez da linha acima:
+        // payload.CompanyLogo = ((): number[] => {
+        //   const binary = atob(base64);
+        //   const arr = new Uint8Array(binary.length);
+        //   for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+        //   return Array.from(arr);
+        // })();
+      }
+
+      await api.post('api/v1/Company', payload);
+
+      // ações pós-sucesso (mantive seu fluxo)
+      Cookies.remove('companyFormData');
+      Cookies.set('lastCompanyRegistered', JSON.stringify({
+        companyName: fields.companyName,
+        tradeName: fields.tradeName,
+        registeredAt: new Date().toISOString()
+      }), { expires: 30 });
+
+      const companiesCount = parseInt(Cookies.get('companiesRegisteredCount') || '0', 10);
+      Cookies.set('companiesRegisteredCount', (companiesCount + 1).toString(), { expires: 365 });
+
+      const userStats = {
+        lastAction: 'company_registered',
+        lastActionDate: new Date().toISOString(),
+        totalCompanies: companiesCount + 1
+      };
+      Cookies.set('userStats', JSON.stringify(userStats), { expires: 365 });
+
+      setSuccess(true);
+      setFields(initialFields);
+      setTouched({});
+      setImagePreview(null);
+
+      setTimeout(() => { window.location.href = '/listaempresas'; }, 2000);
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || err.message || 'Erro ao cadastrar empresa';
+      const errorInfo = {
+        timestamp: new Date().toISOString(),
+        error: errMsg,
+        endpoint: 'api/v1/Company',
+        userAgent: navigator.userAgent
+      };
+      Cookies.set('lastError', JSON.stringify(errorInfo), { expires: 7 });
+      setError(errMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Se for necessário carregar empresa existente e mostrar o logo (adaptável)
+  const loadCompanyImage = async (companyId: string) => {
+    try {
+      const res = await api.get(`api/v1/Company/${companyId}`);
+      const company = res.data;
+      if (!company) return;
+
+      // company.CompanyLogo pode vir como base64 string ou como array de bytes
+      if (company.CompanyLogo) {
+        let base64 = '';
+        if (typeof company.CompanyLogo === 'string') {
+          base64 = company.CompanyLogo;
+        } else if (Array.isArray(company.CompanyLogo)) {
+          base64 = byteArrayToBase64(company.CompanyLogo);
+        }
+        if (base64) {
+          setImagePreview(`data:image/jpeg;base64,${base64}`);
+        }
+      }
+
+      // opcional: preencher campos do form com os dados retornados
+      // setFields(prev => ({ ...prev, ...mappedValuesFromCompany }));
+    } catch (err) {
+      console.error('Erro ao carregar empresa:', err);
+    }
+  };
+
+  // utilitário de labels
+  const stats = (() => {
+    try {
+      const s = Cookies.get('userStats');
+      return s ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  return (
+    <PageLayout
+      title="Cadastro de Empresa"
+      subtitle="Registre uma nova empresa no sistema"
+      actions={
+        <Button variant="outline" icon={X} onClick={() => window.location.href = "/listaempresas"} disabled={loading}>
+          Cancelar
+        </Button>
+      }
+    >
+      {stats && stats.totalCompanies > 0 && (
+        <Card className="bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-3">
+            <Building2 className="text-primary" size={20} />
+            <span className="text-textPrimary text-sm">
+              Você já cadastrou {stats.totalCompanies} empresa(s) no sistema.
+            </span>
+          </div>
+        </Card>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <Card>
+          <div className="text-center space-y-4">
+            <h3 className="text-lg font-semibold text-textPrimary flex items-center justify-center gap-2">
+              <ImageIcon size={20} />
+              Logo da Empresa
+            </h3>
+            <div
+              className={`border-2 ${dragActive ? 'border-primary bg-primary/10' : 'border-dashed border-gray-300'} rounded-lg p-6 cursor-pointer`}
+              onDrop={handleImageDrop}
+              onDragOver={handleImageDragOver}
+              onDragLeave={handleImageDragLeave}
+              onClick={openFilePicker}
+              tabIndex={0}
+              role="button"
+              aria-label="Fazer upload do logo da empresa"
+              onKeyDown={handleWrapperKeyDown}
+            >
+              {imagePreview ? (
+                <div className="space-y-4">
+                  <div className="mx-auto w-32 h-32 rounded-lg overflow-hidden bg-footer">
+                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline" size="sm" onClick={removeImage}>Remover</Button>
+                    <label className="cursor-pointer">
+                      <Button variant="ghost" size="sm" icon={Upload}>Alterar</Button>
+                      <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])} className="hidden" />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Upload className="text-primary" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-textPrimary font-medium">Arraste uma imagem ou clique para fazer upload</p>
+                    <p className="text-textSecondary text-sm mt-1">PNG, JPG, WebP ou SVG até 5MB</p>
+                  </div>
+                  <button onClick={() => fileInputRef.current?.click()}>Escolher Arquivo</button>
+                  <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".png,.jpg,.jpeg,.webp,.svg" />
+
+                  <Button variant="ghost" size="sm" icon={Upload} onClick={openFilePicker}>Alterar</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <h3 className="text-lg font-semibold text-textPrimary mb-6 flex items-center gap-2"><Building2 size={20} /> Informações da Empresa</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <InputField label="CNPJ/CPF" name="cpfCnpj" placeholder="00.000.000/0000-00" value={fields.cpfCnpj} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('cpfCnpj') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+
+            <div>
+              <InputField label="Razão Social" name="companyName" placeholder="Nome oficial da empresa" value={fields.companyName} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('companyName') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+
+            <div>
+              <InputField label="Nome Fantasia" name="tradeName" placeholder="Nome comercial" value={fields.tradeName} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('tradeName') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+
+            <div>
+              <InputField label="E-mail" name="email" type="email" placeholder="contato@empresa.com" value={fields.email} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('email') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+
+            <div>
+              <InputField label="Telefone" name="phone" placeholder="(11) 99999-9999" value={fields.phone} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('phone') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <h3 className="text-lg font-semibold text-textPrimary mb-6">Endereço</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <InputField label="Rua/Avenida" name="street" placeholder="Nome da rua" value={fields.street} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('street') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+
+            <div>
+              <InputField label="Número" name="number" placeholder="123" value={fields.number} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('number') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+
+            <div>
+              <InputField label="Bairro" name="neighborhood" placeholder="Centro" value={fields.neighborhood} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('neighborhood') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+
+            <div>
+              <InputField label="Cidade" name="city" placeholder="São Paulo" value={fields.city} onChange={handleChange} onBlur={handleBlur} required className="focus:ring-primary text-textPrimary bg-background" />
+              {isEmpty('city') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+            </div>
+
+            <div>
+              <InputField label="UF" name="uf" placeholder="SP" value={fields.uf} onChange={handleChange} onBlur={handleBlur} required maxLength={2} className="focus:ring-primary text-textPrimary bg-background uppercase" />
+              {isEmpty('uf') && <span className="text-danger text-sm mt-1 block">Campo obrigatório</span>}
+              {fields.uf && fields.uf.length !== 2 && touched.uf && <span className="text-danger text-sm mt-1 block">UF deve ter 2 caracteres</span>}
+            </div>
+          </div>
+        </Card>
+
+        {error && <Card className="bg-danger/10 border-danger/20"><div className="text-danger text-sm">⚠️ {error}</div></Card>}
+        {success && <Card className="bg-success/10 border-success/20"><div className="text-success text-sm">✅ Empresa cadastrada com sucesso! Redirecionando...</div></Card>}
+
+        <Card>
+          <div className="flex flex-col sm:flex-row gap-4 justify-end">
+            <Button type="button" variant="outline" onClick={() => { setFields(initialFields); setTouched({}); setError(null); setImagePreview(null); Cookies.remove('companyFormData'); }} disabled={loading} icon={X}>Limpar Formulário</Button>
+            <Button type="submit" variant="primary" loading={loading} icon={Save} size="lg">Cadastrar Empresa</Button>
+          </div>
+        </Card>
+      </form>
+    </PageLayout>
+  );
 };
 
-const DefaultColumn = ({ children }: DefaultColumnProps) => (
-  <div>
-    {children}
-  </div>
-);
-
-export default FormElementInput;
+export default CadastroEmpresa;

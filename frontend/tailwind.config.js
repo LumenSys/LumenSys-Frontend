@@ -1,7 +1,7 @@
+/** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
@@ -20,6 +20,8 @@ export default {
         surface: 'var(--color-surface)',
         surfaceUser: 'var(--color-surface-user)',
         hoverButton: 'var(--color-hoverButton)',
+        hoverButton2: 'var(--color-hoverButton2)',
+        whiteColor: 'var(--color-white)',
 
         danger: 'var(--color-danger)',
         hoverDanger: 'var(--color-hoverDanger)',
@@ -32,5 +34,5 @@ export default {
     },
   },
   plugins: [],
-}
+};
 

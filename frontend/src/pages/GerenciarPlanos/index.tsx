@@ -1,106 +1,312 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from '../../App';
+import React, { useState } from "react";
+import { Search, Plus, Edit2, Eye, Filter, Download, Settings, Users, Calendar, DollarSign } from 'lucide-react';
+import PageLayout from '../../components/PageLayout';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import StatsCard from '../../components/StatsCard';
 
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+interface Plano {
+  id: number;
+  nome: string;
+  descricao: string;
+  valorAnual: number;
+  foraDeAr: boolean;
+  maxDependente: number;
+  idadeMaxima: number;
+  adicionalDependente: number;
+  status: 'ativo' | 'inativo' | 'rascunho';
+  totalClientes: number;
+  dataCriacao: string;
+}
+
+const planosExemplo: Plano[] = [
+  {
+    id: 1,
+    nome: 'Plano Básico',
+    descricao: 'Cobertura essencial para necessidades básicas',
+    valorAnual: 1200.00,
+    foraDeAr: false,
+    maxDependente: 2,
+    idadeMaxima: 65,
+    adicionalDependente: 150.00,
+    status: 'ativo',
+    totalClientes: 124,
+    dataCriacao: '15/01/2024'
+  },
+  {
+    id: 2,
+    nome: 'Plano Premium',
+    descricao: 'Cobertura completa com benefícios adicionais',
+    valorAnual: 2500.00,
+    foraDeAr: true,
+    maxDependente: 4,
+    idadeMaxima: 75,
+    adicionalDependente: 200.00,
+    status: 'ativo',
+    totalClientes: 89,
+    dataCriacao: '10/02/2024'
+  },
+  {
+    id: 3,
+    nome: 'Plano Família',
+    descricao: 'Ideal para famílias grandes',
+    valorAnual: 3200.00,
+    foraDeAr: true,
+    maxDependente: 6,
+    idadeMaxima: 80,
+    adicionalDependente: 180.00,
+    status: 'ativo',
+    totalClientes: 67,
+    dataCriacao: '05/03/2024'
+  },
+  {
+    id: 4,
+    nome: 'Plano Jovem',
+    descricao: 'Especial para pessoas até 35 anos',
+    valorAnual: 800.00,
+    foraDeAr: false,
+    maxDependente: 1,
+    idadeMaxima: 35,
+    adicionalDependente: 120.00,
+    status: 'rascunho',
+    totalClientes: 0,
+    dataCriacao: '20/03/2024'
+  }
+];
+
 export default function GerenciarPlanos() {
-  return (
-    <div className="w-full min-h-screen bg-neutral-50 flex flex-col items-center py-12">
-      {/* Título */}
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Planos</h1>
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ativo' | 'inativo' | 'rascunho'>('todos');
 
-      {/* Caixa principal */}
-      <div className="w-[90vw] max-w-6xl bg-zinc-400 rounded-lg shadow-lg p-8 flex flex-col gap-6">
-        {/* Barra de busca */}
-        <div className="flex justify-end">
-          <div className="relative w-72">
-            <input
-              className="w-full h-10 pl-10 pr-12 rounded-md border border-slate-200 text-slate-700 focus:outline-none"
-              placeholder="Buscar por ID"
-            />
-            {/* Ícone de busca */}
-            <span className="absolute left-2 top-2">
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </span>
+  const planosFiltrados = planosExemplo.filter((plano) => {
+    const matchesBusca = plano.nome.toLowerCase().includes(busca.toLowerCase()) ||
+                        plano.descricao.toLowerCase().includes(busca.toLowerCase());
+    const matchesStatus = filtroStatus === 'todos' || plano.status === filtroStatus;
+    return matchesBusca && matchesStatus;
+  });
+
+  const getStatusBadge = (status: string) => {
+    const statusStyles = {
+      ativo: 'bg-success/20 text-success border-success/30',
+      inativo: 'bg-danger/20 text-danger border-danger/30',
+      rascunho: 'bg-warning/20 text-warning border-warning/30'
+    };
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${statusStyles[status as keyof typeof statusStyles]}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
+  };
+
+  const getCoberturaBadge = (foraDeAr: boolean) => {
+    return foraDeAr ? (
+      <span className="px-2 py-1 bg-primary/20 text-primary rounded-full text-xs font-medium border border-primary/30">
+        Nacional
+      </span>
+    ) : (
+      <span className="px-2 py-1 bg-footer text-textSecondary rounded-full text-xs font-medium border border-footer">
+        Local
+      </span>
+    );
+  };
+
+  // Estatísticas
+  const totalPlanos = planosExemplo.length;
+  const planosAtivos = planosExemplo.filter(p => p.status === 'ativo').length;
+  const totalClientes = planosExemplo.reduce((sum, p) => sum + p.totalClientes, 0);
+  const receitaTotal = planosExemplo.reduce((sum, p) => sum + (p.valorAnual * p.totalClientes), 0);
+
+  const statsData = [
+    {
+      title: "Total de Planos",
+      value: totalPlanos,
+      icon: Settings,
+      iconColor: "text-blue-600"
+    },
+    {
+      title: "Planos Ativos",
+      value: planosAtivos,
+      icon: Calendar,
+      iconColor: "text-green-600"
+    },
+    {
+      title: "Total Clientes",
+      value: totalClientes,
+      icon: Users,
+      iconColor: "text-purple-600"
+    },
+    {
+      title: "Receita Anual",
+      value: receitaTotal.toLocaleString('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL', 
+        maximumFractionDigits: 0 
+      }),
+      icon: DollarSign,
+      iconColor: "text-green-600"
+    }
+  ];
+
+  return (
+    <PageLayout
+      title="Gerenciar Planos"
+      subtitle="Configure e gerencie todos os planos funerários disponíveis"
+      actions={
+        <div className="flex gap-3">
+          <Button variant="outline" icon={Filter} size="md">
+            Filtros
+          </Button>
+          <Button variant="outline" icon={Download} size="md">
+            Exportar
+          </Button>
+          <Button 
+            variant="primary" 
+            icon={Plus} 
+            size="md"
+            onClick={() => window.location.href = '/planosfunerarios'}
+          >
+            Novo Plano
+          </Button>
+        </div>
+      }
+    >
+      {/* Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statsData.map((stat, index) => (
+          <StatsCard key={index} {...stat} />
+        ))}
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-textSecondary" />
+              <input
+                type="text"
+                placeholder="Buscar planos..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-footer rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-surface"
+              />
+            </div>
+
+            <select
+              value={filtroStatus}
+              onChange={(e) => setFiltroStatus(e.target.value as any)}
+              className="px-4 py-3 border border-footer rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-surface"
+            >
+              <option value="todos">Todos os Status</option>
+              <option value="ativo">Ativos</option>
+              <option value="inativo">Inativos</option>
+              <option value="rascunho">Rascunhos</option>
+            </select>
           </div>
         </div>
-        {/* Tabela de planos (exemplo) */}
-        <div className="bg-white rounded-md shadow border border-slate-200 overflow-x-auto">
-          <table className="min-w-full text-left">
-            <thead>
-              <tr className="bg-sky-100">
-          <th className="py-3 px-4 text-gray-700">Plano</th>
-          <th className="py-3 px-4 text-gray-700">Usuário</th>
-          <th className="py-3 px-4 text-gray-700">Status</th>
-          <th className="py-3 px-4 text-gray-700">Editar</th>
+      </Card>
+
+      {/* Tabela de Planos */}
+      <Card padding="none">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-footer">
+            <thead className="bg-footer">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Plano
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Valor Anual
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Cobertura
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Dependentes
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Clientes
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                  Ações
+                </th>
               </tr>
             </thead>
-            <tbody>
-              {/* Exemplo de plano ativo */}
-              <tr>
-          <td className="py-3 px-4 text-slate-500">Plano Básico</td>
-          <td className="py-3 px-4 text-slate-500">joao@email.com</td>
-          <td className="py-3 px-4 text-gray-700 flex items-center gap-2">
-            Ativo
-            <svg width="20" height="20" fill="none" stroke="green" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" stroke="green" strokeWidth="2" fill="none"/>
-              <path d="M8 12l2 2l4-4" stroke="green" strokeWidth="2" fill="none"/>
-            </svg>
-          </td>
-          <td className="py-3 px-4">
-            <button type="button" title="Editar">
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-2.828 0L9 13z" />
-                <path d="M7 17h10" />
-              </svg>
-            </button>
-          </td>
-              </tr>
-              {/* Exemplo de plano inativo */}
-              <tr>
-          <td className="py-3 px-4 text-slate-500">Plano Premium</td>
-          <td className="py-3 px-4 text-slate-500">maria@email.com</td>
-          <td className="py-3 px-4 text-gray-700 flex items-center gap-2">
-            Inativo
-            <svg width="20" height="20" fill="none" stroke="red" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" stroke="red" strokeWidth="2" fill="none"/>
-              <line x1="8" y1="8" x2="16" y2="16" stroke="red" strokeWidth="2"/>
-              <line x1="16" y1="8" x2="8" y2="16" stroke="red" strokeWidth="2"/>
-            </svg>
-          </td>
-          <td className="py-3 px-4">
-            <button type="button" title="Editar">
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-2.828 0L9 13z" />
-                <path d="M7 17h10" />
-              </svg>
-            </button>
-          </td>
-              </tr>
+            <tbody className="bg-surface divide-y divide-footer">
+              {planosFiltrados.map((plano) => (
+                <tr key={plano.id} className="hover:bg-footer/50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-textPrimary">{plano.nome}</div>
+                      <div className="text-sm text-textSecondary">{plano.descricao}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(plano.status)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-textPrimary">
+                      {plano.valorAnual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </div>
+                    <div className="text-xs text-textSecondary">
+                      +{plano.adicionalDependente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/dep.
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getCoberturaBadge(plano.foraDeAr)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-textPrimary">
+                      Máx: {plano.maxDependente}
+                    </div>
+                    <div className="text-xs text-textSecondary">
+                      Até {plano.idadeMaxima} anos
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-textPrimary">{plano.totalClientes}</div>
+                    <div className="text-xs text-textSecondary">clientes ativos</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-        {/* Botão para adicionar novo plano */}
-        <div className="flex justify-end mt-4">
-          <button
-            type="button"
-            className="w-60 h-12 bg-sky-500 rounded-md text-white text-sm font-medium flex items-center justify-center gap-2"
-          >
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            <span>Cadastrar novo plano</span>
-          </button>
+
+        {planosFiltrados.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-textSecondary">
+              {busca ? `Nenhum plano encontrado para "${busca}"` : 'Nenhum plano encontrado'}
+            </div>
+          </div>
+        )}
+
+        {/* Rodapé com informações */}
+        <div className="px-6 py-4 border-t border-footer bg-footer/30">
+          <div className="flex items-center justify-between text-sm text-textSecondary">
+            <span>
+              Mostrando {planosFiltrados.length} de {totalPlanos} planos
+            </span>
+            <span>
+              Última atualização: {new Date().toLocaleDateString('pt-BR')}
+            </span>
+          </div>
         </div>
-      </div>
-    </div>
+      </Card>
+    </PageLayout>
   );
 }

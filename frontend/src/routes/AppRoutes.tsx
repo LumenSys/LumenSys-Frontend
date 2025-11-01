@@ -1,12 +1,19 @@
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
 import Layout     from "../components/Layout";
 import LandingPage from "../pages/LandingPage";
-import CadastroEmpresa from "../pages/CadastroEmpresa";
+import CadastroEmpresa from "../pages/Registration/CadastroEmpresa";
 import { routes } from "./routes";
 import LoginPage from "../pages/LoginPage";
 import UserRegistration from "../pages/Registration/UserRegistration";
 import DashBoard from "../pages/DashBoard";
 import GerenciarPlanos from "../pages/GerenciarPlanos";
+import NotFound from "../pages/NotFound";
+import ListOfCompanies from "../pages/Listofcompanies";
+import Servicos from "../pages/Servicos";
+import ContratosPage from "../pages/Contratos";
+import PlanosFunerarios from "../pages/PlanosFunerarios";
+import GerenciarContratos from "../pages/GerenciarContratos";
+import CriarContrato from "../pages/Contratos";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -18,6 +25,13 @@ export const router = createBrowserRouter(
       <Route path={routes.DASHBOARD} element={<DashBoard />} />
       <Route path={routes.MANAGE_PLANS} element={<GerenciarPlanos />} />
       <Route path={routes.CADASTRO_EMPRESA} element={<CadastroEmpresa />} />
+      <Route path={routes.LIST_COMPANIES} element={<ListOfCompanies />} />
+      <Route path={routes.SERVICOS} element={<Servicos />} />
+      <Route path={routes.CONTRATOS} element={<ContratosPage />} />
+      <Route path={routes.PLANOS_FUNERARIOS} element={<PlanosFunerarios />} />
+      <Route path={routes.GERENCIAR_CONTRATOS} element={<GerenciarContratos />} />
+      <Route path={routes.CRIAR_CONTRATO} element={<CriarContrato />} />
+      <Route path="*" element={<NotFound />} />
       </Route>
 </>
   )

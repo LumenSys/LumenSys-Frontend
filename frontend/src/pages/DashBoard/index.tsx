@@ -1,4 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
+import GenericTable from '../../components/DashBoard/Table';
+import { Users, CheckCircle, Ban, TrendingUp, Edit2, Search, Filter, Download, Eye } from 'lucide-react';
+import PageLayout from '../../components/PageLayout';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import StatsCard from '../../components/StatsCard';
+import AccessibilityPanel from '../../components/AccessibilityPanel';
 
 interface ContractData {
     name: string;
@@ -7,135 +14,331 @@ interface ContractData {
     statusColor: string;
     valor: number;
     data: string;
+    plano: string;
 }
 
 const contractsData: ContractData[] = [
-    { name: "Joaquim Joao Estrela", email: "JoEsTrela@gmail.com", status: "Ativo", statusColor: "text-green-600", valor: 2302.90, data: "20/12/2024" },
-    { name: "Joaquim Joao Estrela", email: "JoEsTrela@gmail.com", status: "Ativo", statusColor: "text-green-600", valor: 2302.90, data: "20/12/2024" },
-    { name: "Joaquim Joao Estrela", email: "JoEsTrela@gmail.com", status: "Inativo", statusColor: "text-red-600", valor: 2302.90, data: "20/12/2024" },
-    { name: "Joaquim Joao Estrela", email: "JoEsTrela@gmail.com", status: "Ativo", statusColor: "text-green-600", valor: 2302.90, data: "20/12/2024" },
-    { name: "Joaquim Joao Estrela", email: "JoEsTrela@gmail.com", status: "Ativo", statusColor: "text-green-600", valor: 2302.90, data: "20/12/2024" },
-    { name: "Joaquim Joao Estrela", email: "JoEsTrela@gmail.com", status: "Ativo", statusColor: "text-green-600", valor: 2302.90, data: "20/12/2024" },
-    { name: "Joaquim Joao Estrela", email: "JoEsTrela@gmail.com", status: "Ativo", statusColor: "text-green-600", valor: 2302.90, data: "20/12/2024" },
+    { name: "Joaquim João Estrela", email: "JoEsTrela@gmail.com", status: "Ativo", statusColor: "text-green-600", valor: 2302.90, data: "20/12/2024", plano: "Premium" },
+    { name: "Maria Silva Santos", email: "maria.silva@email.com", status: "Ativo", statusColor: "text-green-600", valor: 1850.00, data: "15/11/2024", plano: "Standard" },
+    { name: "Carlos Eduardo Lima", email: "carlos.lima@email.com", status: "Inativo", statusColor: "text-red-600", valor: 980.50, data: "10/10/2024", plano: "Basic" },
+    { name: "Ana Paula Costa", email: "ana.costa@email.com", status: "Ativo", statusColor: "text-green-600", valor: 2302.90, data: "05/01/2025", plano: "Premium" },
+    { name: "Roberto Ferreira", email: "roberto.f@email.com", status: "Pendente", statusColor: "text-yellow-600", valor: 1200.00, data: "18/12/2024", plano: "Standard" },
+    { name: "Luciana Oliveira", email: "luciana.oli@email.com", status: "Ativo", statusColor: "text-green-600", valor: 2100.00, data: "22/11/2024", plano: "Premium" },
+    { name: "Pedro Henrique Souza", email: "pedro.souza@email.com", status: "Ativo", statusColor: "text-green-600", valor: 1500.75, data: "30/10/2024", plano: "Standard" },
 ];
 
 const DashBoard: React.FC = () => {
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    // Filtrar dados baseado na busca
+    const filteredData = contractsData.filter(contract => 
+        contract.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contract.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contract.status.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Paginação
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+    const dashboardStats = [
+        {
+            title: "Total de Clientes",
+            value: 247,
+            change: "+12%",
+            changeType: "positive" as const,
+            icon: Users,
+            iconColor: "text-blue-600",
+            description: "vs. mês anterior"
+        },
+        {
+            title: "Contratos Ativos",
+            value: 235,
+            change: "+8%",
+            changeType: "positive" as const,
+            icon: CheckCircle,
+            iconColor: "text-green-600",
+            description: "vs. mês anterior"
+        },
+        {
+            title: "Contratos Inativos",
+            value: 12,
+            change: "-3%",
+            changeType: "negative" as const,
+            icon: Ban,
+            iconColor: "text-red-600",
+            description: "vs. mês anterior"
+        },
+        {
+            title: "Receita Mensal",
+            value: "R$ 387.420",
+            change: "+15%",
+            changeType: "positive" as const,
+            icon: TrendingUp,
+            iconColor: "text-purple-600",
+            description: "vs. mês anterior"
+        }
+    ];
+
+    const tableColumns = [
+        { 
+            key: 'name' as keyof ContractData, 
+            label: 'Cliente', 
+            className: 'font-semibold text-gray-900',
+            render: (value: string | number) => (
+                <div>
+                    <div className="font-semibold text-gray-900">{String(value)}</div>
+                </div>
+            )
+        },
+        { 
+            key: 'email' as keyof ContractData, 
+            label: 'Email', 
+            className: 'text-gray-600',
+            render: (value: string | number) => (
+                <div className="text-blue-600 hover:text-blue-800 cursor-pointer">
+                    {String(value)}
+                </div>
+            )
+        },
+        {
+            key: 'plano' as keyof ContractData,
+            label: 'Plano',
+            className: 'text-gray-700',
+            render: (value: string | number) => {
+                const plano = String(value);
+                const colors = {
+                    'Premium': 'bg-purple-100 text-purple-800',
+                    'Standard': 'bg-blue-100 text-blue-800',
+                    'Basic': 'bg-gray-100 text-gray-800'
+                };
+                return (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[plano as keyof typeof colors] || 'bg-gray-100 text-gray-800'}`}>
+                        {plano}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'status' as keyof ContractData,
+            label: 'Status',
+            className: 'font-medium',
+            render: (value: string | number, row: ContractData) => {
+                const status = String(value);
+                const statusStyles = {
+                    'Ativo': 'bg-green-100 text-green-800',
+                    'Inativo': 'bg-red-100 text-red-800',
+                    'Pendente': 'bg-yellow-100 text-yellow-800'
+                };
+                return (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800'}`}>
+                        {status}
+                    </span>
+                );
+            }
+        },
+        { 
+            key: 'valor' as keyof ContractData, 
+            label: 'Valor Mensal', 
+            className: 'font-semibold text-gray-900',
+            render: (value: string | number) => (
+                <span className="font-semibold text-green-600">
+                    R$ {Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+            )
+        },
+        { 
+            key: 'data' as keyof ContractData, 
+            label: 'Data Início', 
+            className: 'text-gray-600',
+            render: (value: string | number) => (
+                <span className="text-gray-600">{String(value)}</span>
+            )
+        },
+        {
+            key: 'name' as keyof ContractData,
+            label: 'Ações',
+            className: 'text-center',
+            render: (value: string | number, row: ContractData) => (
+                <div className="flex space-x-2 justify-center">
+                    <button 
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip"
+                        title="Visualizar"
+                    >
+                        <Eye size={16} />
+                    </button>
+                    <button 
+                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors tooltip"
+                        title="Editar"
+                    >
+                        <Edit2 size={16} />
+                    </button>
+                </div>
+            )
+        }
+    ];
+
+    const tableActions = [
+        {
+            label: 'Gerenciar Planos',
+            onClick: () => window.location.href = "/GerenciarPlanos",
+            className: 'bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors'
+        }
+    ];
+
     return (
-        <div className="min-h-screen bg-gray-100 p-8 pt-16">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-700 mb-2">Seja bem-vindo!</h1>
-                <p className="text-lg text-gray-500">Gerencie seus serviços e planos funerários</p>
-            </div>
-            {/* Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                <div className="bg-surface rounded-lg shadow p-6 flex flex-col justify-between">
-                    <span className="text-gray-500 text-lg font-semibold mb-2">Total de clientes</span>
-                    <div className="flex items-center justify-between">
-                        <span className="text-3xl font-bold text-gray-700">200</span>
-                        <div className="w-14 h-14 bg-sky-500 rounded-md flex items-center justify-center text-white">
-                            {/* Ícone */}
-                            <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 12c2.7 0 8 1.34 8 4v2H4v-2c0-2.66 5.3-4 8-4Zm0-2a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" fill="currentColor" /></svg>
-                        </div>
-                    </div>
+        <PageLayout
+            title="Seja bem-vindo! 👋"
+            subtitle="Gerencie seus serviços e planos funerários com facilidade"
+            actions={
+                <div className="flex gap-3">
+                    <Button variant="outline" icon={Filter} size="md">
+                        Filtros
+                    </Button>
+                    <Button variant="outline" icon={Download} size="md">
+                        Exportar
+                    </Button>
                 </div>
-                <div className="bg-surface rounded-lg shadow p-6 flex flex-col justify-between">
-                    <span className="text-gray-500 text-lg font-semibold mb-2">Contratos ativos</span>
-                    <div className="flex items-center justify-between">
-                        <span className="text-3xl font-bold text-gray-700">212</span>
-                        <div className="w-14 h-14 bg-green-600 rounded-md flex items-center justify-center text-white">
-                            {/* Ícone */}
-                            <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-surface rounded-lg shadow p-6 flex flex-col justify-between">
-                    <span className="text-gray-500 text-lg font-semibold mb-2">Contratos inativos</span>
-                    <div className="flex items-center justify-between">
-                        <span className="text-3xl font-bold text-gray-700">12</span>
-                        <div className="w-14 h-14 bg-red-600 rounded-md flex items-center justify-center text-white">
-                            {/* Ícone */}
-                            <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><path d="M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-surface rounded-lg shadow p-6 flex flex-col justify-between">
-                    <span className="text-gray-500 text-lg font-semibold mb-2">Lucro</span>
-                    <div className="flex items-center justify-between">
-                        <span className="text-3xl font-bold text-gray-700">R$ 60,00</span>
-                        <div className="w-14 h-14 bg-yellow-400 rounded-md flex items-center justify-center text-white">
-                            {/* Ícone */}
-                            <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 3v18M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                        </div>
-                    </div>
-                </div>
+            }
+        >
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {dashboardStats.map((stat, index) => (
+                    <StatsCard key={index} {...stat} />
+                ))}
             </div>
 
-            {/* Tabela de contratos */}
-            <div className="bg-surface rounded-lg shadow p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-gray-700 mb-2 sm:mb-0">Contratos</h2>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <button
-                            className="px-4 py-2 bg-sky-500 text-white rounded hover:bg-sky-600 transition"
-                            onClick={() => window.location.href = "/GerenciarPlanos"}
-                        >
-                            Gerenciar Planos
-                        </button>
+            {/* Quick Actions Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                    <h3 className="text-lg font-semibold text-textPrimary mb-4">Ações Rápidas</h3>
+                    <div className="space-y-3">
+                        <Button variant="primary" size="md" className="w-full" icon={Users}>
+                            Novo Cliente
+                        </Button>
+                        <Button variant="secondary" size="md" className="w-full" icon={CheckCircle}>
+                            Novo Contrato
+                        </Button>
                     </div>
-                </div>
-                <div className="overflow-x-auto rounded-md">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr className="bg-primary">
-                                <th className="px-4 py-3 text-left text-gray-700 font-bold">Cliente</th>
-                                <th className="px-4 py-3 text-left text-gray-700 font-bold">Email</th>
-                                <th className="px-4 py-3 text-left text-gray-700 font-bold">Status</th>
-                                <th className="px-4 py-3 text-left text-gray-700 font-bold">Valor Mensal</th>
-                                <th className="px-4 py-3 text-left text-gray-700 font-bold">Data Início</th>
-                                <th className="px-4 py-3 text-center text-gray-700 font-bold">Editar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {contractsData.map((row, i) => (
-                                <tr key={i} className="hover:bg-gray-300">
-                                    <td className="px-4 py-3 font-semibold text-gray-700">{row.name}</td>
-                                    <td className="px-4 py-3 underline text-gray-700">{row.email}</td>
-                                    <td className={`px-4 py-3 font-bold ${row.statusColor}`}>{row.status}</td>
-                                    <td className="px-4 py-3 font-semibold text-gray-700">
-                                        {row.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                    </td>
-                                    <td className="px-4 py-3 font-semibold text-gray-700">{row.data}</td>
-                                    <td className="px-4 py-3 text-center">
-                                        <button className="p-2 rounded hover:bg-gray-200">
-                                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                                                <path d="M4 21h16M12 17v-6M12 11V7M12 7V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2 gap-4">
-                <span className="text-gray-500 text-sm">Mostrando 1 a {contractsData.length} de 50 resultados</span>
+                </Card>
 
-                <div className="flex items-center gap-4">
-                    <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-gray-700">Anterior</button>
-                    <div className="flex items-center gap-2 text-gray-700">
-                        <button className="px-3 py-1 rounded bg-sky-300 font-bold">1</button>
-                        <button className="px-3 py-1 rounded hover:bg-sky-100">2</button>
-                        <span>...</span>
-                        <button className="px-3 py-1 rounded hover:bg-sky-100">3</button>
-                        <button className="px-3 py-1 rounded hover:bg-sky-100">5</button>
+                <Card>
+                    <h3 className="text-lg font-semibold text-textPrimary mb-4">Resumo do Dia</h3>
+                    <div className="space-y-3">
+                        <div className="flex justify-between">
+                            <span className="text-textSecondary">Novos contratos:</span>
+                            <span className="font-semibold text-success">+3</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-textSecondary">Pendências:</span>
+                            <span className="font-semibold text-warning">2</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-textSecondary">Cancelamentos:</span>
+                            <span className="font-semibold text-danger">1</span>
+                        </div>
                     </div>
-                    <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-gray-700">Próximo &gt;</button>
-                </div>
+                </Card>
+
+                <Card>
+                    <h3 className="text-lg font-semibold text-textPrimary mb-4">Meta Mensal</h3>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                            <span className="text-textSecondary">Progresso:</span>
+                            <span className="font-semibold text-primary">78%</span>
+                        </div>
+                        <div className="w-full bg-footer rounded-full h-2">
+                            <div className="bg-primary h-2 rounded-full" style={{ width: '78%' }}></div>
+                        </div>
+                        <p className="text-sm text-textSecondary">R$ 78.000 de R$ 100.000</p>
+                    </div>
+                </Card>
             </div>
 
-        </div>
+            {/* Table Section */}
+            <Card padding="none">
+                <div className="p-6 border-b border-footer">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                        <div>
+                            <h2 className="text-xl font-semibold text-textPrimary">Contratos Recentes</h2>
+                            <p className="text-textSecondary">Gerencie todos os contratos do sistema</p>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-3 h-4 w-4 text-textSecondary" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar contratos..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 pr-4 py-2 border border-footer rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-surface"
+                                />
+                            </div>
+                            <Button variant="outline" icon={Eye} size="md">
+                                Ver Detalhes
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <GenericTable
+                    title=""
+                    columns={tableColumns}
+                    data={paginatedData}
+                    actions={tableActions}
+                />
+
+                {/* Custom Pagination */}
+                <div className="px-6 py-4 border-t border-footer">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-textSecondary">
+                            Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredData.length)} de {filteredData.length} contratos
+                        </p>
+                        <div className="flex items-center space-x-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Anterior
+                            </Button>
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                const page = i + 1;
+                                return (
+                                    <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                                            currentPage === page
+                                                ? 'bg-primary text-white'
+                                                : 'text-textSecondary hover:bg-footer'
+                                        }`}
+                                    >
+                                        {page}
+                                    </button>
+                                );
+                            })}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                                disabled={currentPage === totalPages}
+                            >
+                                Próximo
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Painel de Acessibilidade */}
+            <AccessibilityPanel />
+        </PageLayout>
     );
 };
 
