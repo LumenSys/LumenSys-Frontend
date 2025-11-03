@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import GenericTable from '../../components/DashBoard/Table';
-import { Users, CheckCircle, Ban, TrendingUp, Edit2, Search, Filter, Download, Eye } from 'lucide-react';
+import { Users, CheckCircle, Ban, TrendingUp, Edit2, Search, Filter, Download, Eye, Notebook } from 'lucide-react';
 import PageLayout from '../../components/PageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import StatsCard from '../../components/StatsCard';
 import AccessibilityPanel from '../../components/AccessibilityPanel';
-
+import { useNavigate } from 'react-router-dom';
+import { routes } from '../../routes/routes';
 interface ContractData {
     name: string;
     email: string;
@@ -28,12 +29,13 @@ const contractsData: ContractData[] = [
 ];
 
 const DashBoard: React.FC = () => {
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
     // Filtrar dados baseado na busca
-    const filteredData = contractsData.filter(contract => 
+    const filteredData = contractsData.filter(contract =>
         contract.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contract.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contract.status.toLowerCase().includes(searchTerm.toLowerCase())
@@ -84,9 +86,9 @@ const DashBoard: React.FC = () => {
     ];
 
     const tableColumns = [
-        { 
-            key: 'name' as keyof ContractData, 
-            label: 'Cliente', 
+        {
+            key: 'name' as keyof ContractData,
+            label: 'Cliente',
             className: 'font-semibold text-gray-900',
             render: (value: string | number) => (
                 <div>
@@ -94,9 +96,9 @@ const DashBoard: React.FC = () => {
                 </div>
             )
         },
-        { 
-            key: 'email' as keyof ContractData, 
-            label: 'Email', 
+        {
+            key: 'email' as keyof ContractData,
+            label: 'Email',
             className: 'text-gray-600',
             render: (value: string | number) => (
                 <div className="text-blue-600 hover:text-blue-800 cursor-pointer">
@@ -126,7 +128,7 @@ const DashBoard: React.FC = () => {
             key: 'status' as keyof ContractData,
             label: 'Status',
             className: 'font-medium',
-            render: (value: string | number, row: ContractData) => {
+            render: (value: string | number) => {
                 const status = String(value);
                 const statusStyles = {
                     'Ativo': 'bg-green-100 text-green-800',
@@ -140,9 +142,9 @@ const DashBoard: React.FC = () => {
                 );
             }
         },
-        { 
-            key: 'valor' as keyof ContractData, 
-            label: 'Valor Mensal', 
+        {
+            key: 'valor' as keyof ContractData,
+            label: 'Valor Mensal',
             className: 'font-semibold text-gray-900',
             render: (value: string | number) => (
                 <span className="font-semibold text-green-600">
@@ -150,9 +152,9 @@ const DashBoard: React.FC = () => {
                 </span>
             )
         },
-        { 
-            key: 'data' as keyof ContractData, 
-            label: 'Data Início', 
+        {
+            key: 'data' as keyof ContractData,
+            label: 'Data Início',
             className: 'text-gray-600',
             render: (value: string | number) => (
                 <span className="text-gray-600">{String(value)}</span>
@@ -162,29 +164,31 @@ const DashBoard: React.FC = () => {
             key: 'name' as keyof ContractData,
             label: 'Ações',
             className: 'text-center',
-            render: (value: string | number, row: ContractData) => (
-                <div className="flex space-x-2 justify-center">
-                    <button 
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip"
-                        title="Visualizar"
-                    >
-                        <Eye size={16} />
-                    </button>
-                    <button 
-                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors tooltip"
-                        title="Editar"
-                    >
-                        <Edit2 size={16} />
-                    </button>
-                </div>
-            )
+                render: (_: any, row: ContractData) => (
+                    <div className="flex space-x-2 justify-center">
+                        <button
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip"
+                            title="Visualizar"
+                            onClick={() => navigate(`${routes.CONTRATOS}?email=${encodeURIComponent(row.email)}`)}
+                        >
+                            <Eye size={16} />
+                        </button>
+                        <button
+                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors tooltip"
+                            title="Editar"
+                            onClick={() => navigate(`${routes.GERENCIAR_CONTRATOS}?email=${encodeURIComponent(row.email)}`)}
+                        >
+                            <Edit2 size={16} />
+                        </button>
+                    </div>
+                )
         }
     ];
 
     const tableActions = [
         {
             label: 'Gerenciar Planos',
-            onClick: () => window.location.href = "/GerenciarPlanos",
+            onClick: () => navigate(routes.MANAGE_PLANS),
             className: 'bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors'
         }
     ];
@@ -216,10 +220,10 @@ const DashBoard: React.FC = () => {
                 <Card>
                     <h3 className="text-lg font-semibold text-textPrimary mb-4">Ações Rápidas</h3>
                     <div className="space-y-3">
-                        <Button variant="primary" size="md" className="w-full" icon={Users}>
-                            Novo Cliente
+                        <Button variant="primary" size="md" className="w-full" icon={Notebook} onClick={() => navigate(routes.SERVICOS)}>
+                            Novo Serviço
                         </Button>
-                        <Button variant="secondary" size="md" className="w-full" icon={CheckCircle}>
+                        <Button variant="secondary" size="md" className="w-full" icon={CheckCircle} onClick={() => navigate(routes.CRIAR_CONTRATO)}>
                             Novo Contrato
                         </Button>
                     </div>
@@ -266,7 +270,7 @@ const DashBoard: React.FC = () => {
                             <h2 className="text-xl font-semibold text-textPrimary">Contratos Recentes</h2>
                             <p className="text-textSecondary">Gerencie todos os contratos do sistema</p>
                         </div>
-                        
+
                         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                             <div className="relative">
                                 <Search className="absolute left-3 top-3 h-4 w-4 text-textSecondary" />
@@ -278,7 +282,7 @@ const DashBoard: React.FC = () => {
                                     className="pl-10 pr-4 py-2 border border-footer rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-surface"
                                 />
                             </div>
-                            <Button variant="outline" icon={Eye} size="md">
+                            <Button variant="outline" icon={Eye} size="md" onClick={() => navigate(routes.CONTRATOS)}>
                                 Ver Detalhes
                             </Button>
                         </div>
@@ -313,11 +317,10 @@ const DashBoard: React.FC = () => {
                                     <button
                                         key={page}
                                         onClick={() => setCurrentPage(page)}
-                                        className={`px-3 py-2 text-sm rounded-md transition-colors ${
-                                            currentPage === page
-                                                ? 'bg-primary text-white'
-                                                : 'text-textSecondary hover:bg-footer'
-                                        }`}
+                                        className={`px-3 py-2 text-sm rounded-md transition-colors ${currentPage === page
+                                            ? 'bg-primary text-white'
+                                            : 'text-textSecondary hover:bg-footer'
+                                            }`}
                                     >
                                         {page}
                                     </button>

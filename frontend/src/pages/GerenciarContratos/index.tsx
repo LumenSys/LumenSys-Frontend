@@ -5,7 +5,6 @@ import {
     Box,
     Button,
     Card,
-    CardContent,
     Chip,
     Container,
     Tab,
@@ -24,7 +23,6 @@ import {
     ListItemSecondaryAction,
     IconButton,
     Divider,
-    Avatar,
 } from "@mui/material";
 
 type ContractType = "Premium" | "Padrão" | "Básico";
@@ -61,7 +59,7 @@ const initialContracts: Contract[] = [
         plano: "Premium",
         status: "Ativo",
         dataContratacao: "2024-01-15",
-        valorMensal: 299.90,
+        valorMensal: 299.9,
         dependentes: 3,
     },
     {
@@ -72,7 +70,7 @@ const initialContracts: Contract[] = [
         plano: "Básico",
         status: "Cancelado",
         dataContratacao: "2023-11-20",
-        valorMensal: 89.90,
+        valorMensal: 89.9,
         dependentes: 1,
     },
     {
@@ -83,7 +81,7 @@ const initialContracts: Contract[] = [
         plano: "Padrão",
         status: "Ativo",
         dataContratacao: "2024-03-10",
-        valorMensal: 179.90,
+        valorMensal: 179.9,
         dependentes: 2,
     },
     {
@@ -94,7 +92,7 @@ const initialContracts: Contract[] = [
         plano: "Premium",
         status: "Suspenso",
         dataContratacao: "2023-12-05",
-        valorMensal: 299.90,
+        valorMensal: 299.9,
         dependentes: 4,
     },
     {
@@ -105,7 +103,7 @@ const initialContracts: Contract[] = [
         plano: "Básico",
         status: "Ativo",
         dataContratacao: "2024-02-28",
-        valorMensal: 89.90,
+        valorMensal: 89.9,
         dependentes: 0,
     },
 ];
@@ -137,7 +135,6 @@ export default function GerenciarContratos() {
         setSearchTerm(e.target.value);
     };
 
-    const handleOpenDialog = () => setOpenDialog(true);
     
     const handleCloseDialog = () => {
         setOpenDialog(false);
@@ -225,34 +222,48 @@ export default function GerenciarContratos() {
         }).format(value);
     };
 
-    const getStatusColor = (status: ContractStatus) => {
+    // Return Tailwind-like classes for badges to match project colors
+    const getStatusClasses = (status: ContractStatus) => {
         switch (status) {
             case "Ativo":
-                return "success";
+                return 'px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
             case "Cancelado":
-                return "error";
+                return 'px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
             case "Suspenso":
-                return "warning";
+                return 'px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800';
             default:
-                return "default";
+                return 'px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800';
         }
     };
 
-    const getPlanoColor = (plano: ContractType) => {
+    const getPlanoClasses = (plano: ContractType) => {
         switch (plano) {
             case "Premium":
-                return "primary";
+                return 'px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800';
             case "Padrão":
-                return "info";
+                return 'px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
             case "Básico":
-                return "secondary";
+                return 'px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800';
             default:
-                return "default";
+                return 'px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getPlanoBg = (plano: ContractType) => {
+        switch (plano) {
+            case "Premium":
+                return 'bg-primary';
+            case "Padrão":
+                return 'bg-blue-600';
+            case "Básico":
+                return 'bg-gray-600';
+            default:
+                return 'bg-gray-400';
         }
     };
 
     return (
-        <Container maxWidth="lg" sx={{ py: 5 }}>
+        <Container maxWidth="lg" className="py-5">
             {/* Header */}
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
                 <div>
@@ -270,6 +281,7 @@ export default function GerenciarContratos() {
                         window.location.href = "/criarcontrato";
                     }}
                     size="large"
+                    className="bg-primary text-white hover:bg-primary/90"
                 >
                     Novo Contrato
                 </Button>
@@ -334,15 +346,9 @@ export default function GerenciarContratos() {
                                         },
                                     }}
                                 >
-                                    <Avatar
-                                        sx={{
-                                            mr: 2,
-                                            bgcolor: getPlanoColor(contract.plano) + '.main',
-                                            color: 'white',
-                                        }}
-                                    >
+                                    <div className={`mr-3 h-10 w-10 rounded-full flex items-center justify-center text-white ${getPlanoBg(contract.plano)}`}>
                                         {contract.nomeAssinante.charAt(0).toUpperCase()}
-                                    </Avatar>
+                                    </div>
                                     
                                     <ListItemText
                                         primary={
@@ -352,14 +358,14 @@ export default function GerenciarContratos() {
                                                 </Typography>
                                                 <Chip
                                                     label={contract.plano}
-                                                    color={getPlanoColor(contract.plano)}
                                                     size="small"
+                                                    className={getPlanoClasses(contract.plano)}
                                                 />
                                                 <Chip
                                                     label={contract.status}
-                                                    color={getStatusColor(contract.status)}
                                                     size="small"
                                                     variant="outlined"
+                                                    className={getStatusClasses(contract.status)}
                                                 />
                                             </Box>
                                         }
@@ -381,7 +387,8 @@ export default function GerenciarContratos() {
                                         <Box display="flex" gap={1}>
                                             <IconButton
                                                 edge="end"
-                                                onClick={() => {/* Ver detalhes */}}
+                                                onClick={() => { /* Ver detalhes */ }}
+                                                className="text-blue-600"
                                             >
                                                 <Visibility />
                                             </IconButton>
@@ -390,14 +397,14 @@ export default function GerenciarContratos() {
                                                 <>
                                                     <Button
                                                         size="small"
-                                                        color="warning"
+                                                        className="bg-yellow-400 text-white"
                                                         onClick={() => handleChangeStatus(contract.id, "Suspenso")}
                                                     >
                                                         Suspender
                                                     </Button>
                                                     <Button
                                                         size="small"
-                                                        color="error"
+                                                        className="bg-red-500 text-white"
                                                         onClick={() => handleChangeStatus(contract.id, "Cancelado")}
                                                     >
                                                         Cancelar
@@ -408,7 +415,7 @@ export default function GerenciarContratos() {
                                             {contract.status === "Suspenso" && (
                                                 <Button
                                                     size="small"
-                                                    color="success"
+                                                    className="bg-green-600 text-white"
                                                     onClick={() => handleChangeStatus(contract.id, "Ativo")}
                                                 >
                                                     Reativar
@@ -505,6 +512,7 @@ export default function GerenciarContratos() {
                         onClick={handleCreateContract}
                         variant="contained"
                         disabled={!newContract.nomeAssinante || !newContract.cpf || !newContract.telefone}
+                        className="bg-primary text-white"
                     >
                         Criar Contrato
                     </Button>
