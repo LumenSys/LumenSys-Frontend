@@ -49,12 +49,12 @@ interface CompanyLogoProps {
   className?: string;
 }
 
-const CompanyLogo: React.FC<CompanyLogoProps> = ({ 
-  logoBase64, 
-  logoMimeType, 
-  companyName, 
+const CompanyLogo: React.FC<CompanyLogoProps> = ({
+  logoBase64,
+  logoMimeType,
+  companyName,
   size = 'md',
-  className = '' 
+  className = ''
 }) => {
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -70,8 +70,8 @@ const CompanyLogo: React.FC<CompanyLogoProps> = ({
   if (logoBase64 && logoMimeType) {
     const imageUrl = base64ToImageUrl(logoBase64, logoMimeType);
     return (
-      <img 
-        src={imageUrl} 
+      <img
+        src={imageUrl}
         alt={`Logo da ${companyName}`}
         className={`${sizeClasses[size]} object-cover rounded-lg ${className}`}
       />
@@ -88,7 +88,7 @@ const CompanyLogo: React.FC<CompanyLogoProps> = ({
 
 const CadastroEmpresa = () => {
   const api = ApiService();
-  
+
   // Estados do componente
   const [fields, setFields] = useState<CompanyData>(() => {
     const savedData = Cookies.get('companyFormData');
@@ -104,7 +104,7 @@ const CadastroEmpresa = () => {
     }
     return initialFields;
   });
-  
+
   const [touched, setTouched] = useState<{ [K in keyof CompanyData]?: boolean }>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -139,13 +139,13 @@ const CadastroEmpresa = () => {
       if (value instanceof File) return true;
       return !!value;
     });
-    
+
     if (hasData) {
       // Não salvar arquivo no cookie, apenas os outros dados
       const dataToSave = { ...fields };
       delete dataToSave.logo; // Remover arquivo do cookie
-      
-      Cookies.set('companyFormData', JSON.stringify(dataToSave), { 
+
+      Cookies.set('companyFormData', JSON.stringify(dataToSave), {
         expires: 1,
         secure: true,
         sameSite: 'strict'
@@ -220,7 +220,7 @@ const CadastroEmpresa = () => {
   const validateForm = () => {
     const errors: string[] = [];
     const requiredFields: (keyof CompanyData)[] = [
-      'cpfCnpj', 'name', 'tradeName', 'email', 'phone', 
+      'cpfCnpj', 'name', 'tradeName', 'email', 'phone',
       'street', 'number', 'neighborhood', 'city', 'uf'
     ];
 
@@ -279,14 +279,14 @@ const CadastroEmpresa = () => {
 
     try {
       const base64 = await fileToBase64(file);
-      
-      setFields(prev => ({ 
-        ...prev, 
+
+      setFields(prev => ({
+        ...prev,
         logo: file,
         logoBase64: base64,
         logoMimeType: file.type
       }));
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -302,7 +302,7 @@ const CadastroEmpresa = () => {
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragActive(false);
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleImageUpload(files[0]);
@@ -320,8 +320,8 @@ const CadastroEmpresa = () => {
   };
 
   const removeImage = () => {
-    setFields(prev => ({ 
-      ...prev, 
+    setFields(prev => ({
+      ...prev,
       logo: null,
       logoBase64: null,
       logoMimeType: null
@@ -344,7 +344,7 @@ const CadastroEmpresa = () => {
     try {
       const companyData = {
         cpfCnpj: fields.cpfCnpj.replace(/\D/g, ''),
-        name: fields.name,
+        companyName: fields.name, 
         tradeName: fields.tradeName,
         email: fields.email,
         phone: fields.phone.replace(/\D/g, ''),
@@ -353,24 +353,22 @@ const CadastroEmpresa = () => {
         neighborhood: fields.neighborhood,
         city: fields.city,
         uf: fields.uf,
-        logoBase64: fields.logoBase64 || null,
-        logoMimeType: fields.logoMimeType || null
+        companyLogo: fields.logoBase64 || null, 
       };
-
       const response = await api.post('api/v1/Company', companyData);
 
       // Gerenciar cookies de sucesso
       Cookies.remove('companyFormData');
-      
+
       Cookies.set('lastCompanyRegistered', JSON.stringify({
         name: fields.name,
         tradeName: fields.tradeName,
         registeredAt: new Date().toISOString()
       }), { expires: 30 });
-      
+
       const companiesCount = parseInt(Cookies.get('companiesRegisteredCount') || '0');
       Cookies.set('companiesRegisteredCount', (companiesCount + 1).toString(), { expires: 365 });
-      
+
       const userStats = {
         lastAction: 'company_registered',
         lastActionDate: new Date().toISOString(),
@@ -394,7 +392,7 @@ const CadastroEmpresa = () => {
         endpoint: 'api/v1/Company',
         userAgent: navigator.userAgent
       };
-      
+
       Cookies.set('lastError', JSON.stringify(errorInfo), { expires: 7 });
       setError(err.response?.data?.message || 'Erro ao cadastrar empresa');
     } finally {
@@ -416,11 +414,11 @@ const CadastroEmpresa = () => {
     try {
       const response = await api.get(`api/v1/Company/${companyId}`);
       const company = response.data;
-      
+
       if (company.logoBase64 && company.logoMimeType) {
         const imageUrl = base64ToImageUrl(company.logoBase64, company.logoMimeType);
         setImagePreview(imageUrl);
-        
+
         setFields(prev => ({
           ...prev,
           logoBase64: company.logoBase64,
@@ -475,7 +473,7 @@ const CadastroEmpresa = () => {
 
       {/* Formulário Principal */}
       <form onSubmit={handleSubmit} className="space-y-8">
-        
+
         {/* Seção: Logo da Empresa */}
         <Card>
           <div className="text-center space-y-4">
@@ -483,14 +481,13 @@ const CadastroEmpresa = () => {
               <ImageIcon size={20} />
               Logo da Empresa
             </h3>
-            
+
             {/* Upload de Imagem */}
             <div
-              className={`relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 ${
-                dragActive 
-                  ? 'border-primary bg-primary/5 scale-105' 
+              className={`relative border-2 border-dashed rounded-xl p-8 transition-all duration-300 ${dragActive
+                  ? 'border-primary bg-primary/5 scale-105'
                   : 'border-footer hover:border-primary/50 hover:bg-primary/5'
-              }`}
+                }`}
               onDrop={handleImageDrop}
               onDragOver={handleImageDragOver}
               onDragLeave={handleImageDragLeave}
@@ -498,9 +495,9 @@ const CadastroEmpresa = () => {
               {imagePreview ? (
                 <div className="space-y-4">
                   <div className="mx-auto w-32 h-32 rounded-lg overflow-hidden bg-footer">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -557,7 +554,7 @@ const CadastroEmpresa = () => {
             <Building2 size={20} />
             Informações da Empresa
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
               <InputField
@@ -647,7 +644,7 @@ const CadastroEmpresa = () => {
           <h3 className="text-lg font-semibold text-textPrimary mb-6">
             Endereço
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="md:col-span-2">
               <InputField
