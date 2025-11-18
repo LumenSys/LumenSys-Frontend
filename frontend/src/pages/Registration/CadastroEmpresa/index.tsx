@@ -381,9 +381,11 @@ const CadastroEmpresa = () => {
       setTouched({});
       setImagePreview(null);
 
+      // Redirecionar para o perfil da empresa cadastrada
+      const companyId = response.data.id || response.data.companyId;
       setTimeout(() => {
-        window.location.href = "/listaempresas";
-      }, 3000);
+        window.location.href = `/perfilempresa?id=${companyId}`;
+      }, 2000);
 
     } catch (err: any) {
       const errorInfo = {
