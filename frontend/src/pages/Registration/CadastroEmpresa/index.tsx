@@ -357,6 +357,10 @@ const CadastroEmpresa = () => {
       };
       const response = await api.post('api/v1/Company', companyData);
 
+      // DEBUG: Log a resposta da API para encontrar o ID
+      console.log("Resposta completa da API:", response);
+      console.log("Dados da resposta (response.data):", response.data);
+
       // Gerenciar cookies de sucesso
       Cookies.remove('companyFormData');
 
@@ -382,9 +386,15 @@ const CadastroEmpresa = () => {
       setImagePreview(null);
 
       // Redirecionar para o perfil da empresa cadastrada
-      const companyId = response.data.id || response.data.companyId;
+      const companyId = response.data?.id || response.data?.companyId;
       setTimeout(() => {
-        window.location.href = `/perfilempresa?id=${companyId}`;
+        if (companyId) {
+          window.location.href = `/perfilempresa?id=${companyId}`;
+        } else {
+          // Fallback: se não encontrar o ID, redireciona para a lista
+          console.error("ID da empresa não encontrado na resposta da API. Redirecionando para a lista.");
+          window.location.href = "/listaempresas";
+        }
       }, 2000);
 
     } catch (err: any) {
