@@ -1,6 +1,6 @@
 // src/pages/GerenciarContratos/index.tsx
 import React, { useState } from "react";
-import { Add, Visibility, Search } from "@mui/icons-material";
+import { Add, PersonAdd, Visibility, Search } from "@mui/icons-material";
 import {
     Box,
     Button,
@@ -24,6 +24,7 @@ import {
     IconButton,
     Divider,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 type ContractType = "Premium" | "Padrão" | "Básico";
 type ContractStatus = "Ativo" | "Cancelado" | "Suspenso";
@@ -117,6 +118,8 @@ export default function GerenciarContratos() {
     const [searchTerm, setSearchTerm] = useState("");
     const [openDialog, setOpenDialog] = useState(false);
     
+    const navigate = useNavigate();
+
     // Use a interface específica do formulário
     const [newContract, setNewContract] = useState<NewContractForm>({
         nomeAssinante: "",
@@ -274,17 +277,28 @@ export default function GerenciarContratos() {
                         Gerencie os contratos dos seus clientes da funerária
                     </Typography>
                 </div>
-                <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => {
-                        window.location.href = "/criarcontrato";
-                    }}
-                    size="large"
-                    className="bg-primary text-white hover:bg-primary/90"
-                >
-                    Novo Contrato
-                </Button>
+                <Box display="flex" gap={2}>
+                    <Button
+                        variant="outlined"
+                        startIcon={<PersonAdd />}
+                        onClick={() => navigate("/cadastrarcliente")}
+                        size="large"
+                        className="border-primary text-primary hover:bg-primary/10"
+                    >
+                        Novo Cliente
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => {
+                            window.location.href = "/criarcontrato";
+                        }}
+                        size="large"
+                        className="bg-primary text-white hover:bg-primary/90"
+                    >
+                        Novo Contrato
+                    </Button>
+                </Box>
             </Box>
 
             {/* Search Bar */}

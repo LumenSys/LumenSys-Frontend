@@ -11,21 +11,25 @@ import { useNavigate } from 'react-router-dom';
 type FuneralPlanForm = {
   name: string;
   description: string;
+  benefit: string;
   annualValue: string; // kept as string for controlled numeric input, will convert on submit
   monthlyValue: string;
   maxDependents: string;
   maxAge: string;
   dependentAdditional: string;
+  available: boolean;
 };
 
 const initial: FuneralPlanForm = {
   name: '',
   description: '',
+  benefit: '',
   annualValue: '',
   monthlyValue: '',
   maxDependents: '0',
   maxAge: '',
-  dependentAdditional: '0'
+  dependentAdditional: '0',
+  available: true
 };
 
 const PlanosFunerarios: React.FC = () => {
@@ -46,6 +50,10 @@ const PlanosFunerarios: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggleAvailable = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(prev => ({ ...prev, available: e.target.checked }));
   };
 
   const validate = (): string[] => {
@@ -69,11 +77,13 @@ const PlanosFunerarios: React.FC = () => {
     const saved = {
       name: form.name,
       description: form.description,
+      benefit: form.benefit,
       annualValue: form.annualValue,
       monthlyValue: form.monthlyValue,
       maxDependents: form.maxDependents,
       maxAge: form.maxAge,
-      dependentAdditional: form.dependentAdditional
+      dependentAdditional: form.dependentAdditional,
+      available: form.available,
     };
     Cookies.set('planFormData', JSON.stringify(saved), { expires: 1 });
   }, [form]);
@@ -92,11 +102,13 @@ const PlanosFunerarios: React.FC = () => {
       const payload = {
         Name: form.name.trim(),
         Description: form.description.trim(),
+        Benefit: form.benefit.trim(),
         AnnualValue: Number(String(form.annualValue).replace(',', '.')),
         MonthlyValue: Number(String(form.monthlyValue).replace(',', '.')),
         MaxDependents: Number(form.maxDependents || 0),
         MaxAge: Number(form.maxAge || 0),
-        DependentAdditional: Number(String(form.dependentAdditional).replace(',', '.'))
+        DependentAdditional: Number(String(form.dependentAdditional).replace(',', '.')),
+        Available: form.available
       };
 
       // Altere o endpoint se o backend usar outro path (ex: api/v1/Plan)
@@ -138,8 +150,44 @@ const PlanosFunerarios: React.FC = () => {
             <InputField label="Máx. Dependentes" name="maxDependents" type="number" value={form.maxDependents} onChange={handleChange} className="bg-background" />
             <InputField label="Idade Máx." name="maxAge" type="number" value={form.maxAge} onChange={handleChange} className="bg-background" />
             <InputField label="Adicional por Dependente" name="dependentAdditional" value={form.dependentAdditional} onChange={handleChange} className="bg-background" />
+            <div className="md:col-span-2 flex items-center">
+              <label htmlFor="plan-available" className="flex items-center gap-3 text-sm text-textPrimary">
+                <input
+                  id="plan-available"
+                  type="checkbox"
+                  checked={form.available}
+                  onChange={handleToggleAvailable}
+                  className="h-4 w-4 rounded border border-borderPrimary accent-primary focus:outline-none"
+                />
+                Atualizar plano como disponível para contratação
+              </label>
+            </div>
             <div className="md:col-span-2">
-              <InputField label="Descrição" name="description" value={form.description} onChange={handleChange} textarea rows={4} className="bg-background" />
+              <div className="md:col-span-2">
+                <div>
+                  <label className="text-sm font-medium text-textPrimary block mb-1">Descrição</label>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    rows={4}
+                    className="w-full rounded-lg border border-borderPrimary bg-background px-3 py-2 text-sm text-textPrimary transition focus:border-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <div>
+                <label className="text-sm font-medium text-textPrimary block mb-1">Benefício principal</label>
+                <textarea
+                  name="benefit"
+                  value={form.benefit}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full rounded-lg border border-borderPrimary bg-background px-3 py-2 text-sm text-textPrimary transition focus:border-primary focus:outline-none"
+                  placeholder="Descreva o principal benefício que o plano oferece"
+                />
+              </div>
             </div>
           </div>
         </Card>

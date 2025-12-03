@@ -12,5 +12,6 @@ export const routes =
             PLANOS_FUNERARIOS: "/planosfunerarios",
             GERENCIAR_CONTRATOS: "/gerenciarcontratos",
             CRIAR_CONTRATO: "/criarcontrato",
-            PERFIL_EMPRESA: "/perfilempresa"
+            PERFIL_EMPRESA: "/perfilempresa",
+            CADASTRO_CLIENTE: "/cadastrarcliente",
     }

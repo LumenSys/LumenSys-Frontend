@@ -1,18 +1,10 @@
-// src/components/shared/InputField.tsx
 import React, { useState } from 'react';
 import eyeIcon from '../../assets/images/eye.svg';
 import closeEyeIcon from '../../assets/images/closeEye.svg';
 
-type InputFieldProps = {
+type InputFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
   name: string;
-  type?: string;
-  placeholder?: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  maxLength?: number;
-  required?: boolean;
   className?: string;
 };
 
@@ -20,16 +12,12 @@ const InputField: React.FC<InputFieldProps> = ({
   label,
   name,
   type = 'text',
-  placeholder,
-  value,
-  onChange,
-  onBlur,
-  maxLength,
-  required = false,
   className = '',
+  ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
+
   return (
     <div className="w-full relative">
       {label && (
@@ -41,13 +29,8 @@ const InputField: React.FC<InputFieldProps> = ({
         id={name}
         name={name}
         type={isPassword && showPassword ? 'text' : type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
-        maxLength={maxLength} 
-        required={required}
         className={`w-full px-4 py-2 border rounded focus:ring-primary focus:outline-none ${className} ${isPassword ? 'pr-10' : ''}`}
+        {...props}
       />
       {isPassword && (
         <button
@@ -58,7 +41,7 @@ const InputField: React.FC<InputFieldProps> = ({
         >
           <img
             src={showPassword ? eyeIcon : closeEyeIcon}
-            alt={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            alt={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
             className="h-5 w-5"
           />
         </button>
