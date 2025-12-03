@@ -1,30 +1,10 @@
-// src/pages/GerenciarContratos/index.tsx
 import React, { useState } from "react";
 import { Add, PersonAdd, Visibility, Search } from "@mui/icons-material";
-import {
-    Box,
-    Button,
-    Card,
-    Chip,
-    Container,
-    Tab,
-    Tabs,
-    Typography,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
-    MenuItem,
-    InputAdornment,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemSecondaryAction,
-    IconButton,
-    Divider,
+import {Box, Button, Card, Chip, Container, Tab, Tabs, Typography, Dialog, DialogTitle, DialogContent, DialogActions,
+    TextField, MenuItem, InputAdornment, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Divider,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import ApiService from "../../services/apiService";
 
 type ContractType = "Premium" | "Padrão" | "Básico";
 type ContractStatus = "Ativo" | "Cancelado" | "Suspenso";

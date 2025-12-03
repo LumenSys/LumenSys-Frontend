@@ -7,7 +7,7 @@ import InputField from "../../components/Input/InputField";
 import PageLayout from "../../components/PageLayout";
 
 const initialFormState = {
-  nome: "",
+  name: "",
   cpf: "",
   phone: "",
   email: "",
@@ -44,7 +44,7 @@ const CadastroCliente = () => {
 
     try {
       const apiService = api();
-      await apiService.post("api/v1/Clients", {
+      await apiService.post("api/v1/Client", {
         ...form,
         companyId: 1,
       });
@@ -74,9 +74,9 @@ const CadastroCliente = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <InputField
               label="Nome completo"
-              name="nome"
-              value={form.nome}
-              onChange={handleFieldChange("nome")}
+              name="name"
+              value={form.name}
+              onChange={handleFieldChange("name")}
             />
             <InputField label="CPF" name="cpf" value={form.cpf} onChange={handleFieldChange("cpf")} />
             <InputField

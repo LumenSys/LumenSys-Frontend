@@ -195,7 +195,7 @@ const DashBoard: React.FC = () => {
 
     return (
         <PageLayout
-            title="Seja bem-vindo! 👋"
+            title="Seja bem-vindo!"
             subtitle="Gerencie seus serviços e planos funerários com facilidade"
             actions={
                 <div className="flex gap-3">

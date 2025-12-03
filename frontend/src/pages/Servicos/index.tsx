@@ -1,43 +1,15 @@
 import React, { useState } from "react";
-import { 
-  Settings, 
-  Plus, 
-  Eye, 
-  Edit2, 
-  Archive, 
-  Clock, 
-  MapPin, 
-  Calendar, 
-  Camera, 
-  Music, 
-  Shield, 
-  Trash2, 
-  Building, 
-  Utensils, 
-  Printer, 
-  Heart, 
-  Church, 
-  Briefcase, 
-  Home, 
-  Users, 
-  Truck, 
-  Package,
-  Search,
-  Filter,
-  Car,
-  FlowerIcon as Flower,
-  X,
-} from 'lucide-react';
+import { Calendar, Building, Users,Car,FlowerIcon as Flower,} from 'lucide-react';
 import { Container, Typography, Box, Tabs, Tab, CardContent, Stack, Chip, Divider, Dialog, DialogTitle, DialogContent, TextField, FormControl, InputLabel, Select, MenuItem, DialogActions } from '@mui/material';
 import Card from '@mui/material/Card';
 import Button from '../../components/Button';
-import { useTheme } from '../../context/ThemeContext';
 import { SelectChangeEvent } from "@mui/material";
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ApiService from "../../services/apiService";
 
-// Exemplo de planos e clientes (substitua por dados reais)
+
 const planos = [{ id: 1, nome: "Plano Ouro" }, { id: 2, nome: "Plano Prata" }, { id: 3, nome: "Plano Bronze" }];
 const clientes = [{ id: 1, nome: "João Silva" }, { id: 2, nome: "Maria Souza" }, { id: 3, nome: "Pedro Santos" }];
 
@@ -45,21 +17,8 @@ const icones = {
   "Organização de Velórios": <Calendar className="text-primary" size={32} />,
   "Transporte Funerário": <Car className="text-primary" size={32} />,
   "Floricultura": <Flower className="text-primary" size={32} />,
-  "Fotografia e Filmagem": <Camera className="text-primary" size={32} />,
-  "Música e Coral": <Music className="text-primary" size={32} />,
-  "Segurança": <Shield className="text-primary" size={32} />,
-  "Limpeza e Higienização": <Trash2 className="text-primary" size={32} />,
   "Documentação Legal": <Building className="text-primary" size={32} />,
-  "Buffet e Recepção": <Utensils className="text-primary" size={32} />,
-  "Impressões e Comunicados": <Printer className="text-primary" size={32} />,
-  "Cuidados Especiais": <Heart className="text-primary" size={32} />,
-  "Serviços Religiosos": <Church className="text-primary" size={32} />,
-  "Preparação do Corpo": <Briefcase className="text-primary" size={32} />,
-  "Atendimento Domiciliar": <Home className="text-primary" size={32} />,
   "Apoio Psicológico": <Users className="text-primary" size={32} />,
-  "Translado": <Truck className="text-primary" size={32} />,
-  "Urnas e Caixões": <Package className="text-primary" size={32} />,
-  "Tanatopraxia": <Settings className="text-primary" size={32} />,
 };
 
 type Servico = {
@@ -74,6 +33,7 @@ type Servico = {
   // Propriedades específicas do serviço
   dataFuneral?: string;
   horarioFuneral?: string;
+  endTime?: string;
   localFuneral?: string;
   cemiterio?: string;
   observacoes?: string;
@@ -94,6 +54,7 @@ type FormData = {
   clienteId?: number;
   dataFuneral?: string;
   horarioFuneral?: string;
+  endTime?: string;
   localFuneral?: string;
   cemiterio?: string;
   observacoes?: string;
@@ -105,6 +66,7 @@ type FormData = {
 };
 
 const Servicos: React.FC = () => {
+  const api = ApiService();
   const [servicos, setServicos] = useState<Servico[]>([
     {
       id: 1,
@@ -134,45 +96,30 @@ const Servicos: React.FC = () => {
     {
       id: 3,
       title: "Floricultura",
-      description: "Arranjos florais personalizados para homenagear o ente querido",
+      description: "Arranjos florais com flores frescas para homenagear entes queridos",
       icon: "Floricultura",
-      arquivado: true,
-      concluido: true,
-      dataConclusao: "2024-08-10",
       prioridade: "baixa",
-      valor: 350.00,
+      valor: 350.0,
       fornecedor: "Flores & Vida",
     },
     {
       id: 4,
-      title: "Preparação do Corpo",
-      description: "Serviços de tanatopraxia e preparação adequada do corpo para o velório",
-      icon: "Preparação do Corpo",
-      dataFuneral: "2024-08-22",
-      horarioFuneral: "09:00",
-      responsavel: "Dr. Carlos Santos",
-      prioridade: "alta",
-      valor: 1200.00,
-    },
-    {
-      id: 5,
       title: "Documentação Legal",
       description: "Auxílio na obtenção de certidões de óbito e demais documentos necessários",
       icon: "Documentação Legal",
-      dataFuneral: "2024-08-21",
       responsavel: "Advogado Silva",
       prioridade: "alta",
-      valor: 400.00,
+      valor: 400.0,
     },
     {
-      id: 6,
+      id: 5,
       title: "Apoio Psicológico",
       description: "Atendimento psicológico para familiares em momento de luto",
       icon: "Apoio Psicológico",
       responsavel: "Psicóloga Maria",
       telefoneContato: "(11) 88888-8888",
       prioridade: "media",
-      valor: 200.00,
+      valor: 200.0,
     },
   ]);
 
@@ -186,7 +133,8 @@ const Servicos: React.FC = () => {
     planoId: undefined,
     clienteId: undefined,
     dataFuneral: "",
-    horarioFuneral: "",
+     horarioFuneral: "",
+     endTime: "",
     localFuneral: "",
     cemiterio: "",
     observacoes: "",
@@ -205,7 +153,7 @@ const Servicos: React.FC = () => {
     return false;
   });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
@@ -239,6 +187,7 @@ const Servicos: React.FC = () => {
         clienteId: undefined,
         dataFuneral: "",
         horarioFuneral: "",
+        endTime: "",
         localFuneral: "",
         cemiterio: "",
         observacoes: "",
