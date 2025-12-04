@@ -1,4 +1,4 @@
-import { SetStateAction, useEffect, useMemo, useState } from "react";
+import { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, Plus } from "lucide-react";
 
 import api from "../../services/apiService";
@@ -25,6 +25,8 @@ interface PlanosFunerarios {
 const Contratos = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [plans, setPlans] = useState<PlanosFunerarios[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [selectedClientId, setSelectedClientId] = useState<number | "">("");
   const [selectedPlanId, setSelectedPlanId] = useState<number | "">("");
@@ -40,18 +42,57 @@ const Contratos = () => {
     [plans, selectedPlanId]
   );
 
-  useEffect(() => {
-    (async () => {
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
       const apiService = api();
       const [clientsResponse, plansResponse] = await Promise.all([
         apiService.get("api/v1/Clients"),
-        apiService.get("api/v1/PlanosFunerarios"),
+        apiService.get("api/v1/FuneralPlans"),
       ]);
 
-      setClients(clientsResponse.data);
-      setPlans(plansResponse.data);
-    })();
+      const rawClients = Array.isArray(clientsResponse.data)
+        ? clientsResponse.data
+        : Array.isArray(clientsResponse.data?.data)
+          ? clientsResponse.data.data
+          : [];
+
+      const rawPlans = Array.isArray(plansResponse.data)
+        ? plansResponse.data
+        : Array.isArray(plansResponse.data?.data)
+          ? plansResponse.data.data
+          : [];
+
+      const normalizedClients: Client[] = rawClients.map((client: any) => ({
+        id: Number(client.id ?? client.clientId ?? 0),
+        companyId: Number(client.companyId ?? client.company?.id ?? 0),
+        name: client.name ?? "Cliente sem nome",
+        email: client.email ?? "",
+        cpf: client.cpf ?? client.document ?? undefined,
+      })).filter((client: Client) => Number.isFinite(client.id) && client.id > 0);
+
+      const normalizedPlans: PlanosFunerarios[] = rawPlans.map((plan: any) => ({
+        id: Number(plan.id ?? plan.planId ?? 0),
+        name: plan.name ?? plan.title ?? "Plano sem nome",
+        monthlyAmount: Number(plan.monthlyAmount ?? plan.monthlyValue ?? 0),
+        annualAmount: Number(plan.annualAmount ?? plan.annualValue ?? 0),
+      })).filter((plan: PlanosFunerarios) => Number.isFinite(plan.id) && plan.id > 0);
+
+      setClients(normalizedClients.sort((a, b) => a.name.localeCompare(b.name, "pt-BR")));
+      setPlans(normalizedPlans.sort((a, b) => a.name.localeCompare(b.name, "pt-BR")));
+    } catch (loadError: any) {
+      console.error("Erro ao carregar dados para contratos:", loadError);
+      const message = loadError?.response?.data?.message || loadError.message || "Não foi possível carregar clientes e planos. Tente novamente.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     const savedClientId = localStorage.getItem("contract_client_id");
@@ -119,6 +160,9 @@ const Contratos = () => {
             <p className="text-sm text-textPrimary">
               A empresa e o cliente vinculados à apólice serão preenchidos quando você escolher um cadastro.
             </p>
+            {error && (
+              <p className="mt-2 text-sm text-danger">⚠️ {error}</p>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -128,6 +172,7 @@ const Contratos = () => {
                 className="rounded-lg border border-borderPrimary bg-background p-3 text-sm text-textPrimary"
                 value={selectedClientId}
                 onChange={(event) => setSelectedClientId(Number(event.target.value) || "")}
+                disabled={loading}
               >
                 <option value="">Selecione um cliente</option>
                 {clients.map((client) => (
@@ -144,6 +189,7 @@ const Contratos = () => {
                 className="rounded-lg border border-borderPrimary bg-background p-3 text-sm text-textPrimary"
                 value={selectedPlanId}
                 onChange={(event) => setSelectedPlanId(Number(event.target.value) || "")}
+                disabled={loading}
               >
                 <option value="">Selecione um plano</option>
                 {plans.map((plan) => (
@@ -172,6 +218,9 @@ const Contratos = () => {
             <Button className="flex-1" variant="outline" onClick={handleSubmit} icon={Plus}>
               Salvar contrato
             </Button>
+            <Button className="flex-1" variant="outline" onClick={loadData} disabled={loading}>
+              {loading ? "Atualizando..." : "Atualizar cadastros"}
+            </Button>
             <Button className="flex-1" variant="outline">
               Limpar formulário
             </Button>
@@ -180,6 +229,9 @@ const Contratos = () => {
 
         <Card className="space-y-6 p-6">
           <div className="text-sm font-semibold text-textSecondary">Resumo do plano</div>
+          {loading && (
+            <p className="text-sm text-textSecondary">Carregando informações...</p>
+          )}
           {selectedPlan ? (
             <div className="space-y-6">
               <div className="grid gap-4">

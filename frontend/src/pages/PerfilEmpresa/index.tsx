@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2, Save, Trash2, X, Upload, Edit2, Plus, MapPin, Mail, Phone, AlertTriangle, LucideIcon } from 'lucide-react';
+import AccessibilityPanel from '../../components/AccessibilityPanel';
 
 // ====================================================================
 // 1. Tipagem
@@ -943,7 +944,9 @@ const PerfilEmpresaContent = () => { // Renomeado para Content
         confirmText="Excluir Permanentemente"
         loading={loading}
       />
+      <AccessibilityPanel />
     </>
+
   );
 };
 

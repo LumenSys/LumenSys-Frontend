@@ -1,10 +1,12 @@
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import api from "../../services/apiService";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import InputField from "../../components/Input/InputField";
 import PageLayout from "../../components/PageLayout";
+import AccessibilityPanel from "../../components/AccessibilityPanel";
 
 const initialFormState = {
   name: "",
@@ -18,10 +20,17 @@ const initialFormState = {
   uf: "",
 };
 
+type StatusState = {
+  type: "success" | "error";
+  text: string;
+};
+
 const CadastroCliente = () => {
   const [form, setForm] = useState(initialFormState);
   const [saving, setSaving] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [status, setStatus] = useState<StatusState | null>(null);
+  const redirectTimeoutRef = useRef<number | null>(null);
+  const navigate = useNavigate();
 
   const filledFields = useMemo(
     () => Object.values(form).filter((value) => value.trim()).length,
@@ -34,13 +43,17 @@ const CadastroCliente = () => {
     };
 
   const handleReset = () => {
+    if (redirectTimeoutRef.current) {
+      window.clearTimeout(redirectTimeoutRef.current);
+      redirectTimeoutRef.current = null;
+    }
     setForm(initialFormState);
-    setStatusMessage("");
+    setStatus(null);
   };
 
   const handleSubmit = async () => {
     setSaving(true);
-    setStatusMessage("");
+    setStatus(null);
 
     try {
       const apiService = api();
@@ -48,14 +61,25 @@ const CadastroCliente = () => {
         ...form,
         companyId: 1,
       });
-      setStatusMessage("Cliente salvo com sucesso.");
-      handleReset();
+      setStatus({ type: "success", text: "Cliente salvo com sucesso. Redirecionando..." });
+      setForm(initialFormState);
+      redirectTimeoutRef.current = window.setTimeout(() => {
+        navigate("/contratos");
+      }, 1200);
     } catch (error) {
-      setStatusMessage("Não foi possível salvar o cliente. Tente novamente.");
+      setStatus({ type: "error", text: "Não foi possível salvar o cliente. Tente novamente." });
     } finally {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <PageLayout
@@ -133,7 +157,13 @@ const CadastroCliente = () => {
             </Button>
           </div>
 
-          {statusMessage && <p className="text-sm text-textSecondary">{statusMessage}</p>}
+          {status && (
+            <p
+              className={`text-sm ${status.type === "success" ? "text-success" : "text-danger"}`}
+            >
+              {status.text}
+            </p>
+          )}
         </Card>
 
         <Card className="space-y-4 p-6">
@@ -156,6 +186,7 @@ const CadastroCliente = () => {
           </div>
         </Card>
       </div>
+    <AccessibilityPanel />
     </PageLayout>
   );
 };

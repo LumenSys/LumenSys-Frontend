@@ -5,6 +5,7 @@ import {Box, Button, Card, Chip, Container, Tab, Tabs, Typography, Dialog, Dialo
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ApiService from "../../services/apiService";
+import AccessibilityPanel from "../../components/AccessibilityPanel";
 
 type ContractType = "Premium" | "Padrão" | "Básico";
 type ContractStatus = "Ativo" | "Cancelado" | "Suspenso";
@@ -515,3 +516,4 @@ export default function GerenciarContratos() {
         </Container>
     );
 }
+<AccessibilityPanel />

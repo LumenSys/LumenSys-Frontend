@@ -4,6 +4,8 @@ import PageLayout from '../../components/PageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import StatsCard from '../../components/StatsCard';
+import AccessibilityPanel from "../../components/AccessibilityPanel";
+
 
 interface Plano {
   id: number;
@@ -307,6 +309,7 @@ export default function GerenciarPlanos() {
           </div>
         </div>
       </Card>
+     <AccessibilityPanel />
     </PageLayout>
   );
 }
