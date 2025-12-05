@@ -48,7 +48,7 @@ const Contratos = () => {
       setError(null);
       const apiService = api();
       const [clientsResponse, plansResponse] = await Promise.all([
-        apiService.get("api/v1/Clients"),
+        apiService.get("api/v1/Client"),
         apiService.get("api/v1/FuneralPlans"),
       ]);
 
@@ -65,8 +65,8 @@ const Contratos = () => {
           : [];
 
       const normalizedClients: Client[] = rawClients.map((client: any) => ({
-        id: Number(client.id ?? client.clientId ?? 0),
-        companyId: Number(client.companyId ?? client.company?.id ?? 0),
+        id: Number(client.id ?? client.clientId ?? client.clienteId ?? 0),
+        companyId: Number(client.companyId ?? client.company?.id ?? client.empresaId ?? 0),
         name: client.name ?? "Cliente sem nome",
         email: client.email ?? "",
         cpf: client.cpf ?? client.document ?? undefined,
@@ -127,12 +127,14 @@ const Contratos = () => {
   }, [contractNumber]);
 
   const handleSubmit = async () => {
-    if (!selectedClient || !selectedPlan) return;
+    if (!selectedClient || !selectedPlan) {
+      return;
+    }
 
     const payload = {
       contrato: contractNumber,
       planoFunerarioId: selectedPlan.id,
-      clienteId: selectedClient.id,
+      clienteId: Number(selectedClientId),
       companyId: selectedClient.companyId,
     };
 
