@@ -5,7 +5,7 @@ import Button from '../../components/Button';
 import InputField from '../../components/Input/InputField';
 import ApiService from '../../services/apiService';
 import Cookies from 'js-cookie';
-import { Save, X } from 'lucide-react';
+import { CheckCircle, Save, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 type FuneralPlanForm = {
@@ -73,6 +73,7 @@ const PlanosFunerarios: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'benefit' | 'plan'>('benefit');
   const [benefitForm, setBenefitForm] = useState<BenefitFormState>(initialBenefitForm);
   const [benefits, setBenefits] = useState<BenefitItem[]>([]);
@@ -269,6 +270,11 @@ const PlanosFunerarios: React.FC = () => {
     setForm(prev => ({ ...prev, benefitIds: [] }));
   };
 
+  const handleSuccessConfirm = () => {
+    setShowSuccessModal(false);
+    navigate('/gerenciarPlanos');
+  };
+
   const validate = (): string[] => {
     const errs: string[] = [];
     if (!form.name.trim()) errs.push('Nome do plano é obrigatório.');
@@ -358,10 +364,8 @@ const PlanosFunerarios: React.FC = () => {
       // limpar cache local do formulário
       Cookies.remove('planFormData');
       setSuccess(true);
-      // confirmação visual imediata
-      try { window.alert('Plano cadastrado com sucesso!'); } catch {}
+      setShowSuccessModal(true);
       setForm(initialPlanForm);
-      setTimeout(() => navigate('/gerenciarPlanos'), 800);
     } catch (err: any) {
       // Tentar extrair mensagens de validação do backend
       const backend = err?.response?.data;
@@ -377,7 +381,8 @@ const PlanosFunerarios: React.FC = () => {
   };
 
   return (
-    <PageLayout
+    <>
+      <PageLayout
       title="Cadastro de Planos Funerários"
       subtitle="Crie e gerencie os planos oferecidos"
       actions={
@@ -645,7 +650,28 @@ const PlanosFunerarios: React.FC = () => {
           </form>
         </>
       )}
-    </PageLayout>
+      </PageLayout>
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-success/10 p-2 text-success">
+                <CheckCircle className="h-6 w-6" />
+              </span>
+              <h3 className="text-lg font-semibold text-textPrimary">Plano cadastrado com sucesso</h3>
+            </div>
+            <p className="mt-4 text-sm text-textSecondary">
+              O plano foi criado e já pode ser gerenciado. Clique em continuar para seguir para a página de gerenciamento.
+            </p>
+            <div className="mt-6 flex justify-end">
+              <Button variant="primary" onClick={handleSuccessConfirm}>
+                Ir para gerenciamento
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

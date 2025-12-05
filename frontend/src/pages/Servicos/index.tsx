@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Calendar, Building, Users, Car, FlowerIcon as Flower, RefreshCcw } from 'lucide-react';
-import { Container, Typography, Box, Tabs, Tab, CardContent, Stack, Chip, Divider, Dialog, DialogTitle, DialogContent, TextField, FormControl, InputLabel, Select, MenuItem, DialogActions, Alert, Autocomplete, FormHelperText } from '@mui/material';
+import { Calendar, Building, Users, Car, FlowerIcon as Flower, RefreshCcw, Droplet, Flame, Feather } from 'lucide-react';
+import { Typography, Box, Tabs, Tab, CardContent, Stack, Chip, Divider, Dialog, DialogTitle, DialogContent, TextField, FormControl, InputLabel, Select, MenuItem, DialogActions, Alert, Autocomplete, FormHelperText } from '@mui/material';
 import Card from '@mui/material/Card';
 import Button from '../../components/Button';
 import { SelectChangeEvent } from "@mui/material";
@@ -8,14 +8,99 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ApiService from "../../services/apiService";
+import PageLayout from "../../components/PageLayout";
 
 
 const icones = {
-  "Organização de Velórios": <Calendar className="text-primary" size={32} />,
-  "Transporte Funerário": <Car className="text-primary" size={32} />,
-  "Floricultura": <Flower className="text-primary" size={32} />,
-  "Documentação Legal": <Building className="text-primary" size={32} />,
-  "Apoio Psicológico": <Users className="text-primary" size={32} />,
+  "Serviço Funerário": <Feather size={32} strokeWidth={1.8} />,
+  "Organização de Velórios": <Calendar size={32} strokeWidth={1.8} />,
+  "Transporte Funerário": <Car size={32} strokeWidth={1.8} />,
+  "Thanatopraxia": <Droplet size={32} strokeWidth={1.8} />,
+  "Cremação": <Flame size={32} strokeWidth={1.8} />,
+  "Floricultura": <Flower size={32} strokeWidth={1.8} />,
+  "Documentação Legal": <Building size={32} strokeWidth={1.8} />,
+  "Apoio Psicológico": <Users size={32} strokeWidth={1.8} />,
+};
+
+type ServiceCategory = {
+  id: string;
+  label: string;
+  description: string;
+  iconKeys: (keyof typeof icones)[];
+  primaryIconKey: keyof typeof icones;
+};
+
+const SERVICE_CATEGORIES: ServiceCategory[] = [
+  {
+    id: "transport",
+    label: "Transporte",
+    description: "Logística e translado em veículos funerários.",
+    iconKeys: ["Transporte Funerário"],
+    primaryIconKey: "Transporte Funerário",
+  },
+  {
+    id: "thanatopraxia",
+    label: "Thanatopraxia",
+    description: "Preparação técnica e conservação do corpo.",
+    iconKeys: ["Thanatopraxia"],
+    primaryIconKey: "Thanatopraxia",
+  },
+  {
+    id: "cremacao",
+    label: "Cremação",
+    description: "Procedimentos e cerimônias de cremação.",
+    iconKeys: ["Cremação"],
+    primaryIconKey: "Cremação",
+  },
+  {
+    id: "funeral",
+    label: "Funeral",
+    description: "Organização completa de velórios e cerimônias.",
+    iconKeys: ["Serviço Funerário", "Organização de Velórios"],
+    primaryIconKey: "Serviço Funerário",
+  },
+];
+
+const DEFAULT_CATEGORY_ID = "funeral";
+
+const renderIcon = (iconKey: keyof typeof icones, size = 32) => {
+  const iconNode = icones[iconKey];
+  if (React.isValidElement(iconNode)) {
+    const typedIcon = iconNode as React.ReactElement<{ size?: number }>;
+    return React.cloneElement(typedIcon, { size });
+  }
+
+  return iconNode;
+};
+const CATEGORY_STYLES: Record<string, {
+  accent: string;
+  iconBg: string;
+  chip: {
+    active: "success" | "primary" | "secondary" | "default" | "warning" | "info" | "error";
+    concluded: "success" | "primary" | "secondary" | "default" | "warning" | "info" | "error";
+    archived: "success" | "primary" | "secondary" | "default" | "warning" | "info" | "error";
+  };
+}> = {
+  transport: {
+    accent: "#2563eb",
+    iconBg: "rgba(37,99,235,0.12)",
+    chip: { active: "success", concluded: "primary", archived: "warning" },
+  },
+  thanatopraxia: {
+    accent: "#0d9488",
+    iconBg: "rgba(13,148,136,0.12)",
+    chip: { active: "success", concluded: "primary", archived: "warning" },
+  },
+  cremacao: {
+    accent: "#f97316",
+    iconBg: "rgba(249,115,22,0.14)",
+    chip: { active: "success", concluded: "primary", archived: "warning" },
+  },
+  funeral: {
+    accent: "#7c3aed",
+    iconBg: "rgba(124,58,237,0.12)",
+    chip: { active: "success", concluded: "primary", archived: "warning" },
+  },
 };
 
 type Plano = {
@@ -81,6 +166,8 @@ type FormData = {
 
 const Servicos: React.FC = () => {
   const apiService = useMemo(() => ApiService(), []);
+  const defaultCategory = SERVICE_CATEGORIES.find((category) => category.id === DEFAULT_CATEGORY_ID) ?? SERVICE_CATEGORIES[0];
+  const defaultIcon = (defaultCategory?.primaryIconKey ?? "Serviço Funerário") as keyof typeof icones;
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -94,11 +181,12 @@ const Servicos: React.FC = () => {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Servico | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>(defaultCategory?.id ?? DEFAULT_CATEGORY_ID);
   const [tabValue, setTabValue] = useState(0); // 0: Ativos, 1: Concluídos, 2: Arquivados
   const [form, setForm] = useState<FormData>({
     title: "",
     description: "",
-    icon: "Organização de Velórios",
+    icon: defaultIcon,
     planoId: undefined,
     clienteId: undefined,
     dataFuneral: "",
@@ -113,6 +201,54 @@ const Servicos: React.FC = () => {
     valor: 0,
     fornecedor: "",
   });
+  const activeCategoryConfig = useMemo(
+    () => SERVICE_CATEGORIES.find((category) => category.id === activeCategory) ?? null,
+    [activeCategory]
+  );
+  const categoryStyleForIcon = useCallback(
+    (iconKey: keyof typeof icones) => {
+      const category = SERVICE_CATEGORIES.find((item) => item.iconKeys.includes(iconKey));
+      if (!category) {
+        return CATEGORY_STYLES[DEFAULT_CATEGORY_ID];
+      }
+
+      return CATEGORY_STYLES[category.id] ?? CATEGORY_STYLES[DEFAULT_CATEGORY_ID];
+    },
+    []
+  );
+  const formIconStyle = useMemo(() => categoryStyleForIcon(form.icon), [form.icon, categoryStyleForIcon]);
+  const servicosDaCategoria = useMemo(() => {
+    if (!activeCategoryConfig) {
+      return servicos;
+    }
+
+    return servicos.filter((servico) => activeCategoryConfig.iconKeys.includes(servico.icon));
+  }, [servicos, activeCategoryConfig]);
+  const categoryStats = useMemo(() => {
+    return SERVICE_CATEGORIES.reduce<Record<string, {
+      total: number;
+      ativos: number;
+      concluidos: number;
+      arquivados: number;
+      valorTotal: number;
+    }>>((acc, category) => {
+      const items = servicos.filter((servico) => category.iconKeys.includes(servico.icon));
+      const ativos = items.filter((item) => !item.concluido && !item.arquivado).length;
+      const concluidos = items.filter((item) => item.concluido && !item.arquivado).length;
+      const arquivados = items.filter((item) => item.arquivado).length;
+      const valorTotal = items.reduce((total, item) => total + (item.valor || 0), 0);
+
+      acc[category.id] = {
+        total: items.length,
+        ativos,
+        concluidos,
+        arquivados,
+        valorTotal,
+      };
+
+      return acc;
+    }, {});
+  }, [servicos]);
   const extractPayload = (response: any) => {
     if (!response) return [];
     if (Array.isArray(response.data)) return response.data;
@@ -175,9 +311,24 @@ const Servicos: React.FC = () => {
           return acc;
         }
 
+        const statusRaw = raw?.status ?? raw?.Status ?? raw?.ativo ?? raw?.isActive ?? raw?.active;
+        let isActive = true;
+        if (typeof statusRaw === "string") {
+          const lowered = statusRaw.toLowerCase();
+          if (lowered.includes("inativ") || lowered.includes("desativ") || lowered.includes("cancel")) {
+            isActive = false;
+          }
+        } else if (typeof statusRaw === "boolean") {
+          isActive = statusRaw;
+        }
+
+        if (!isActive) {
+          return acc;
+        }
+
         acc.push({
           id,
-          nome: raw?.name ?? raw?.fullName ?? raw?.nome ?? `Cliente ${id}`,
+          nome: raw?.name ?? raw?.fullName ?? raw?.clientName ?? raw?.nome ?? `Cliente ${id}`,
           email: raw?.email ?? raw?.Email ?? raw?.mail ?? undefined,
         });
 
@@ -187,6 +338,21 @@ const Servicos: React.FC = () => {
       const normalizedPlanos: Plano[] = (rawPlanos as any[]).reduce<Plano[]>((acc, raw) => {
         const id = Number(raw?.id ?? raw?.planId ?? raw?.PlanId ?? raw?.funeralPlansId);
         if (!Number.isFinite(id)) {
+          return acc;
+        }
+
+        const availableRaw = raw?.available ?? raw?.isAvailable ?? raw?.ativo ?? raw?.status;
+        let isAvailable = true;
+        if (typeof availableRaw === "string") {
+          const lowered = availableRaw.toLowerCase();
+          if (lowered.includes("inativ") || lowered.includes("desativ") || lowered.includes("indispon")) {
+            isAvailable = false;
+          }
+        } else if (typeof availableRaw === "boolean") {
+          isAvailable = availableRaw;
+        }
+
+        if (!isAvailable) {
           return acc;
         }
 
@@ -203,6 +369,7 @@ const Servicos: React.FC = () => {
         if (!Number.isFinite(id)) {
           return acc;
         }
+
 
         const status = (raw?.status ?? raw?.Status ?? "").toString().toLowerCase();
         const concluido = Boolean(
@@ -226,6 +393,55 @@ const Servicos: React.FC = () => {
 
         const prioridade = (raw?.prioridade ?? raw?.priority ?? "") as Servico["prioridade"];
 
+        const normalizeName = (value: unknown) => (typeof value === "string" ? value.trim().toLowerCase() : "");
+        const possibleClientNames = [
+          raw?.clientName,
+          raw?.clienteNome,
+          raw?.nomeCliente,
+          raw?.client?.name,
+          raw?.client?.fullName,
+          raw?.client?.nome,
+          raw?.cliente?.nome,
+          raw?.cliente?.name,
+        ]
+          .map(normalizeName)
+          .filter((value) => value.length > 0);
+        const isClientName = (value: unknown) => {
+          const normalized = normalizeName(value);
+          return normalized.length > 0 && possibleClientNames.includes(normalized);
+        };
+
+        const titleCandidates: unknown[] = [
+          raw?.title,
+          raw?.serviceTitle,
+          raw?.serviceName,
+          raw?.nomeServico,
+          raw?.descricao,
+          raw?.description,
+        ];
+        let resolvedTitle = "";
+        for (const candidate of titleCandidates) {
+          if (typeof candidate !== "string") {
+            continue;
+          }
+
+          const trimmed = candidate.trim();
+          if (!trimmed) {
+            continue;
+          }
+
+          if (isClientName(trimmed)) {
+            continue;
+          }
+
+          resolvedTitle = trimmed;
+          break;
+        }
+
+        if (!resolvedTitle) {
+          resolvedTitle = `Serviço ${id}`;
+        }
+
         const toDateLabel = (value: any) => {
           if (!value) return undefined;
           const date = new Date(value);
@@ -240,7 +456,7 @@ const Servicos: React.FC = () => {
 
         acc.push({
           id,
-          title: raw?.title ?? raw?.name ?? raw?.serviceName ?? `Serviço ${id}`,
+          title: resolvedTitle,
           description: raw?.description ?? raw?.details ?? raw?.observacoes ?? "Sem descrição disponível.",
           icon,
           planoId: Number(raw?.planId ?? raw?.planoId ?? raw?.funeralPlansId ?? raw?.PlanId ?? NaN) || undefined,
@@ -278,12 +494,13 @@ const Servicos: React.FC = () => {
 
         return acc;
       }, []);
+      const planosAtivosIds = new Set<number>(normalizedPlanos.map((plano) => plano.id));
 
       const beneficioPorPlanoMap = (rawBeneficios as any[]).reduce<Record<number, number[]>>((acc, raw) => {
         const planId = Number(raw?.funeralPlansId ?? raw?.planId ?? raw?.PlanoId ?? raw?.funeralPlanId);
         const benefitId = Number(raw?.benefitsId ?? raw?.benefitId ?? raw?.BenefitId ?? raw?.beneficioId);
 
-        if (!Number.isFinite(planId) || !Number.isFinite(benefitId)) {
+        if (!Number.isFinite(planId) || !Number.isFinite(benefitId) || !planosAtivosIds.has(planId)) {
           return acc;
         }
 
@@ -302,7 +519,7 @@ const Servicos: React.FC = () => {
         const clientId = Number(raw?.clientId ?? raw?.clienteId ?? raw?.customerId ?? raw?.ClientId);
         const planId = Number(raw?.planoFunerarioId ?? raw?.funeralPlansId ?? raw?.planId ?? raw?.PlanoId);
 
-        if (!Number.isFinite(clientId) || !Number.isFinite(planId)) {
+        if (!Number.isFinite(clientId) || !Number.isFinite(planId) || !planosAtivosIds.has(planId)) {
           return acc;
         }
 
@@ -358,22 +575,22 @@ const Servicos: React.FC = () => {
   }, [loadServicos]);
 
   const servicosFiltrados = useMemo(() => {
-    return servicos.filter((servico) => {
+    return servicosDaCategoria.filter((servico) => {
       if (tabValue === 0) return !servico.concluido && !servico.arquivado; // Ativos
       if (tabValue === 1) return servico.concluido && !servico.arquivado; // Concluídos
       if (tabValue === 2) return servico.arquivado; // Arquivados
       return false;
     });
-  }, [servicos, tabValue]);
+  }, [servicosDaCategoria, tabValue]);
 
   const estatisticas = useMemo(() => {
-    const ativos = servicos.filter((s) => !s.concluido && !s.arquivado).length;
-    const concluidos = servicos.filter((s) => s.concluido && !s.arquivado).length;
-    const arquivados = servicos.filter((s) => s.arquivado).length;
-    const valorTotal = servicos.reduce((total, s) => total + (s.valor || 0), 0);
+    const ativos = servicosDaCategoria.filter((s) => !s.concluido && !s.arquivado).length;
+    const concluidos = servicosDaCategoria.filter((s) => s.concluido && !s.arquivado).length;
+    const arquivados = servicosDaCategoria.filter((s) => s.arquivado).length;
+    const valorTotal = servicosDaCategoria.reduce((total, s) => total + (s.valor || 0), 0);
 
     return { ativos, concluidos, arquivados, valorTotal };
-  }, [servicos]);
+  }, [servicosDaCategoria]);
 
   const selectedClientOption = useMemo<Cliente | null>(() => {
     if (!form.clienteId) {
@@ -427,15 +644,35 @@ const Servicos: React.FC = () => {
     return collected.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
   }, [selectedClientPlanIds, beneficiosPorPlano, beneficios]);
 
+  const selectablePlans = useMemo(() => {
+    if (selectedClientPlanIds.length > 0) {
+      const filtered = planos.filter((plano) => selectedClientPlanIds.includes(plano.id));
+      if (filtered.length > 0) {
+        return filtered;
+      }
+    }
+
+    return planos;
+  }, [planos, selectedClientPlanIds]);
+
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const handleOpen = (servico?: Servico) => {
+  const handleCategoryTabChange = (_: React.SyntheticEvent, newCategoryId: string) => {
+    setActiveCategory(newCategoryId);
+    setTabValue(0);
+  };
+
+  const handleOpen = (servico?: Servico, presetIcon?: Servico["icon"]) => {
     setSaveError(null);
     setSaving(false);
     if (servico) {
       setEditing(servico);
+      const relatedCategory = SERVICE_CATEGORIES.find((category) => category.iconKeys.includes(servico.icon));
+      if (relatedCategory) {
+        setActiveCategory(relatedCategory.id);
+      }
       setForm({
         title: servico.title,
         description: servico.description,
@@ -456,10 +693,17 @@ const Servicos: React.FC = () => {
       });
     } else {
       setEditing(null);
+      const targetIcon = presetIcon ?? activeCategoryConfig?.primaryIconKey ?? defaultIcon;
+      if (presetIcon) {
+        const targetCategory = SERVICE_CATEGORIES.find((category) => category.iconKeys.includes(presetIcon));
+        if (targetCategory) {
+          setActiveCategory(targetCategory.id);
+        }
+      }
       setForm({
         title: "",
         description: "",
-        icon: "Organização de Velórios",
+        icon: targetIcon,
         planoId: undefined,
         clienteId: undefined,
         dataFuneral: "",
@@ -494,7 +738,9 @@ const Servicos: React.FC = () => {
         };
       }
 
-      const planIds = planosPorCliente[newValue.id] ?? [];
+      const planIds = (planosPorCliente[newValue.id] ?? []).filter((planId) =>
+        planos.some((plano) => plano.id === planId)
+      );
       const firstPlanId = planIds[0];
 
       return {
@@ -528,7 +774,9 @@ const Servicos: React.FC = () => {
       return;
     }
 
-    const planIds = planosPorCliente[form.clienteId];
+    const planIds = (planosPorCliente[form.clienteId] ?? []).filter((planId) =>
+      planos.some((plano) => plano.id === planId)
+    );
     if (!planIds || planIds.length === 0) {
       return;
     }
@@ -637,48 +885,130 @@ const Servicos: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 8 }}>
-      <Typography variant="h3" align="center" color="text.primary" gutterBottom sx={{ fontWeight: 700 }}>
-        Serviços Funerários
+    <PageLayout
+      title="Serviços Funerários"
+      actions={(
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Button
+            variant="outline"
+            icon={RefreshCcw}
+            onClick={loadServicos}
+            loading={loading}
+          >
+            Atualizar dados
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => handleOpen(undefined, activeCategoryConfig?.primaryIconKey ?? defaultIcon)}
+          >
+            Adicionar Serviço
+          </Button>
+        </Stack>
+      )}
+    >
+      <Typography variant="body1" color="text.secondary">
+        Escolha o tipo de serviço para visualizar indicadores e gerenciar processos específicos.
       </Typography>
 
-      {/* Estatísticas */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 2 }}>
-        <Card sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="h4" color="primary.main" fontWeight="bold">
-            {loading ? '...' : estatisticas.ativos}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">Serviços Ativos</Typography>
-        </Card>
-        <Card sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="h4" color="success.main" fontWeight="bold">
-            {loading ? '...' : estatisticas.concluidos}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">Concluídos</Typography>
-        </Card>
-        <Card sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="h4" color="warning.main" fontWeight="bold">
-            {loading ? '...' : estatisticas.arquivados}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">Arquivados</Typography>
-        </Card>
-        <Card sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="h4" color="info.main" fontWeight="bold">
-            {loading ? '...' : formatCurrency(estatisticas.valorTotal)}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">Valor Total</Typography>
-        </Card>
-      </Box>
-
-      <Box display="flex" justifyContent="flex-end" mb={loading || error ? 2 : 4}>
-        <Button
-          variant="outline"
-          icon={RefreshCcw}
-          onClick={loadServicos}
-          loading={loading}
+      <Box sx={{ mb: 3 }}>
+        <Tabs
+          value={activeCategory}
+          onChange={handleCategoryTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
         >
-          Atualizar dados
-        </Button>
+          {SERVICE_CATEGORIES.map((category) => {
+            const stats = categoryStats[category.id] ?? {
+              total: 0,
+              ativos: 0,
+              concluidos: 0,
+              arquivados: 0,
+              valorTotal: 0,
+            };
+            const categoryStyle = CATEGORY_STYLES[category.id] ?? CATEGORY_STYLES[DEFAULT_CATEGORY_ID];
+
+            return (
+              <Tab
+                key={category.id}
+                value={category.id}
+                label={
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: categoryStyle.iconBg,
+                        color: categoryStyle.accent,
+                      }}
+                    >
+                      {renderIcon(category.primaryIconKey, 18)}
+                    </Box>
+                    <Box textAlign="left">
+                      <Typography variant="button" sx={{ textTransform: 'none', display: 'block' }}>
+                        {category.label}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        {loading ? '...' : `${stats.total} serviços`}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                }
+                sx={{
+                  alignItems: 'flex-start',
+                  textTransform: 'none',
+                  minHeight: 64,
+                  py: 1.5,
+                  px: 2,
+                }}
+              />
+            );
+          })}
+        </Tabs>
+      </Box>
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
+          <Card sx={{ p: 3, textAlign: 'center', borderRadius: 2, boxShadow: 1 }}>
+            <Typography variant="overline" color="primary.main" sx={{ letterSpacing: 1 }}>
+              Ativos
+            </Typography>
+            <Typography variant="h4" color="primary.main" fontWeight="bold">
+              {loading ? '...' : estatisticas.ativos}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">Serviços em andamento</Typography>
+          </Card>
+          <Card sx={{ p: 3, textAlign: 'center', borderRadius: 2, boxShadow: 1 }}>
+            <Typography variant="overline" color="success.main" sx={{ letterSpacing: 1 }}>
+              Concluídos
+            </Typography>
+            <Typography variant="h4" color="success.main" fontWeight="bold">
+              {loading ? '...' : estatisticas.concluidos}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">Processos finalizados</Typography>
+          </Card>
+          <Card sx={{ p: 3, textAlign: 'center', borderRadius: 2, boxShadow: 1 }}>
+            <Typography variant="overline" color="warning.main" sx={{ letterSpacing: 1 }}>
+              Arquivados
+            </Typography>
+            <Typography variant="h4" color="warning.main" fontWeight="bold">
+              {loading ? '...' : estatisticas.arquivados}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">Aguardando nova ação</Typography>
+          </Card>
+          <Card sx={{ p: 3, textAlign: 'center', borderRadius: 2, boxShadow: 1 }}>
+            <Typography variant="overline" color="info.main" sx={{ letterSpacing: 1 }}>
+              Valor total
+            </Typography>
+            <Typography variant="h4" color="info.main" fontWeight="bold">
+              {loading ? '...' : formatCurrency(estatisticas.valorTotal)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">Somatório financeiro</Typography>
+          </Card>
+        </Box>
       </Box>
 
       {error && (
@@ -687,15 +1017,12 @@ const Servicos: React.FC = () => {
         </Alert>
       )}
 
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
+      <Box sx={{ mb: 3 }}>
+        <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
           <Tab label="Ativos" />
           <Tab label="Concluídos" />
           <Tab label="Arquivados" />
         </Tabs>
-        <Button variant="primary" onClick={() => handleOpen()}>
-          Adicionar Serviço
-        </Button>
       </Box>
       
       {/* Grid responsivo usando CSS Grid */}
@@ -711,24 +1038,42 @@ const Servicos: React.FC = () => {
           mt: 4
         }}
       >
-        {servicosFiltrados.map((servico) => (
+        {servicosFiltrados.map((servico) => {
+          const style = categoryStyleForIcon(servico.icon);
+          const borderColor = servico.concluido ? '#4caf50' : servico.arquivado ? '#ff9800' : style.accent;
+
+          return (
           <Card
             key={servico.id}
-            sx={{
+            sx={(theme) => ({
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              boxShadow: 3,
+              boxShadow: 2,
               borderRadius: 2,
               transition: "transform 0.2s ease-in-out",
-              "&:hover": { transform: "translateY(-4px)", boxShadow: 6 },
+              "&:hover": { transform: "translateY(-4px)", boxShadow: 4 },
               opacity: servico.arquivado ? 0.7 : 1,
-              border: servico.concluido ? '2px solid #4caf50' : servico.arquivado ? '2px solid #ff9800' : 'none',
-            }}
+              border: `1px solid ${servico.concluido || servico.arquivado ? borderColor : theme.palette.divider}`,
+              backgroundColor: theme.palette.background.paper,
+            })}
           >
             <CardContent sx={{ flexGrow: 1, p: 3 }}>
               <Stack direction="row" alignItems="center" spacing={2} mb={2}>
-                {icones[servico.icon]}
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: style.iconBg,
+                    color: style.accent,
+                  }}
+                >
+                  {renderIcon(servico.icon, 26)}
+                </Box>
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     {servico.title}
@@ -755,10 +1100,33 @@ const Servicos: React.FC = () => {
                 {servico.description}
               </Typography>
 
-              <Divider sx={{ my: 2 }} />
+              <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
+                <Chip
+                  label={`Plano: ${planos.find(p => p.id === servico.planoId)?.nome || "-"}`}
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                />
+                <Chip
+                  label={`Cliente: ${clientes.find(c => c.id === servico.clienteId)?.nome || "-"}`}
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                />
+                {servico.responsavel && (
+                  <Chip
+                    label={`Responsável: ${servico.responsavel}`}
+                    size="small"
+                    variant="outlined"
+                    color="info"
+                  />
+                )}
+              </Stack>
+
+              <Divider sx={{ my: 2, opacity: 0.6 }} />
 
               {/* Informações detalhadas */}
-              <Stack spacing={1}>
+              <Stack spacing={1.2}>
                 <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={1}>
                   <CalendarTodayIcon fontSize="small" />
                   Data: {formatDate(servico.dataFuneral)}
@@ -773,15 +1141,6 @@ const Servicos: React.FC = () => {
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   <strong>Valor:</strong> {formatCurrency(servico.valor)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Plano:</strong> {planos.find(p => p.id === servico.planoId)?.nome || "-"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Cliente:</strong> {clientes.find(c => c.id === servico.clienteId)?.nome || "-"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Responsável:</strong> {servico.responsavel || "-"}
                 </Typography>
                 {servico.fornecedor && (
                   <Typography variant="body2" color="text.secondary">
@@ -836,7 +1195,8 @@ const Servicos: React.FC = () => {
               </Stack>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </Box>
 
       {loading && servicos.length === 0 && (
@@ -850,23 +1210,51 @@ const Servicos: React.FC = () => {
       {servicosFiltrados.length === 0 && !loading && (
         <Box textAlign="center" py={8}>
           <Typography variant="h6" color="text.secondary">
-            {tabValue === 0 && "Nenhum serviço ativo encontrado"}
-            {tabValue === 1 && "Nenhum serviço concluído encontrado"}
-            {tabValue === 2 && "Nenhum serviço arquivado encontrado"}
+            {tabValue === 0 && `Nenhum serviço ativo encontrado para ${activeCategoryConfig?.label ?? "esta categoria"}`}
+            {tabValue === 1 && `Nenhum serviço concluído encontrado para ${activeCategoryConfig?.label ?? "esta categoria"}`}
+            {tabValue === 2 && `Nenhum serviço arquivado encontrado para ${activeCategoryConfig?.label ?? "esta categoria"}`}
           </Typography>
         </Box>
       )}
 
       {/* Dialog para adicionar/editar serviços */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
-        <DialogTitle>{editing ? "Editar Serviço" : "Adicionar Serviço"}</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ pr: 3 }}>
+          <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: formIconStyle.iconBg,
+                  color: formIconStyle.accent,
+                }}
+              >
+                {renderIcon(form.icon, 26)}
+              </Box>
+              <Box>
+                <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 2 }}>
+                  {activeCategoryConfig?.label ?? "Serviço"}
+                </Typography>
+                <Typography variant="h5" fontWeight={600}>
+                  {editing ? "Editar Serviço" : "Adicionar Serviço"}
+                </Typography>
+              </Box>
+            </Stack>
+            <Chip label={form.icon} color="primary" variant="outlined" size="small" />
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ pb: 0 }}>
           {saveError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {saveError}
             </Alert>
           )}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 1 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mt: 1 }}>
             {/* Coluna 1 - Informações Básicas */}
             <Box>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold">
@@ -902,7 +1290,7 @@ const Servicos: React.FC = () => {
                   {Object.keys(icones).map((key) => (
                     <MenuItem key={key} value={key}>
                       <Stack direction="row" alignItems="center" spacing={1}>
-                        {icones[key as keyof typeof icones]}
+                        {renderIcon(key as keyof typeof icones, 18)}
                         <span>{key}</span>
                       </Stack>
                     </MenuItem>
@@ -997,8 +1385,10 @@ const Servicos: React.FC = () => {
             </Box>
           </Box>
 
+          <Divider sx={{ my: 3 }} />
+
           {/* Linha completa para campos maiores */}
-          <Box sx={{ mt: 2 }}>
+          <Box>
             <Autocomplete
               options={clientes}
               value={selectedClientOption}
@@ -1033,19 +1423,28 @@ const Servicos: React.FC = () => {
                 value={form.planoId || ""}
                 label="Plano"
                 onChange={handleSelectChange}
-                disabled={selectedClientPlanIds.length === 1}
               >
                 <MenuItem value="">Nenhum</MenuItem>
-                {planos.map((p) => (
+                {selectablePlans.map((p) => (
                   <MenuItem key={p.id} value={p.id}>{p.nome}</MenuItem>
                 ))}
               </Select>
-              {selectedClientPlanIds.length === 1 && (
+              {selectedClientPlanIds.length > 0 && selectablePlans.length === 1 && (
                 <FormHelperText>
-                  Este cliente está vinculado a um único plano pelo contrato vigente.
+                  Este cliente está vinculado a um único plano pelo contrato vigente. Ajuste apenas se necessário.
+                </FormHelperText>
+              )}
+              {selectedClientPlanIds.length > 0 && selectablePlans.length > 1 && (
+                <FormHelperText>
+                  Listando apenas os planos associados ao cliente selecionado.
                 </FormHelperText>
               )}
             </FormControl>
+            {selectedClientPlanIds.length > 0 && selectablePlans.length === 0 && (
+              <Alert severity="warning" sx={{ mt: 1 }}>
+                O cliente possui contratos, mas nenhum plano ativo está disponível para seleção.
+              </Alert>
+            )}
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                 Benefícios do plano
@@ -1100,19 +1499,19 @@ const Servicos: React.FC = () => {
             />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancelar</Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={handleClose} variant="outline">Cancelar</Button>
           <Button
             onClick={handleSave}
             variant="primary"
             loading={saving}
             disabled={saving || isSaveDisabled}
           >
-            Salvar
+            {editing ? "Salvar alterações" : "Salvar serviço"}
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </PageLayout>
   );
 };
 
