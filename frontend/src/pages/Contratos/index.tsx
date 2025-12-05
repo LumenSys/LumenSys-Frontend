@@ -1,4 +1,5 @@
 import { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { ClipboardList, Plus } from "lucide-react";
 
 import api from "../../services/apiService";
@@ -27,18 +28,27 @@ const Contratos = () => {
   const [plans, setPlans] = useState<PlanosFunerarios[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [currentCompanyId, setCurrentCompanyId] = useState<number | null>(null);
+  const [isActive, setIsActive] = useState<boolean>(true);
+  const [dependentCount, setDependentCount] = useState<number>(0);
+  const { id } = useParams();
+  const editingId = useMemo(() => {
+    const parsed = Number(id);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }, [id]);
 
-  const [selectedClientId, setSelectedClientId] = useState<number | "">("");
-  const [selectedPlanId, setSelectedPlanId] = useState<number | "">("");
-  const [contractNumber, setContractNumber] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  // contrato auto-gerado no backend; não manter número manual
 
   const selectedClient = useMemo(
-    () => clients.find((client) => client.id === Number(selectedClientId)) ?? null,
+    () => clients.find((client) => client.id === (selectedClientId ?? -1)) ?? null,
     [clients, selectedClientId]
   );
 
   const selectedPlan = useMemo(
-    () => plans.find((plan) => plan.id === Number(selectedPlanId)) ?? null,
+    () => plans.find((plan) => plan.id === (selectedPlanId ?? -1)) ?? null,
     [plans, selectedPlanId]
   );
 
@@ -81,6 +91,7 @@ const Contratos = () => {
 
       setClients(normalizedClients.sort((a, b) => a.name.localeCompare(b.name, "pt-BR")));
       setPlans(normalizedPlans.sort((a, b) => a.name.localeCompare(b.name, "pt-BR")));
+
     } catch (loadError: any) {
       console.error("Erro ao carregar dados para contratos:", loadError);
       const message = loadError?.response?.data?.message || loadError.message || "Não foi possível carregar clientes e planos. Tente novamente.";
@@ -90,56 +101,120 @@ const Contratos = () => {
     }
   }, []);
 
+  const loadExistingContract = useCallback(async () => {
+    if (!editingId) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const apiService = api();
+      const resp = await apiService.get(`api/v1/Contracts/${editingId}`);
+      const data = Array.isArray(resp.data) ? resp.data[0] : (resp.data?.data ?? resp.data);
+      const clientId = Number(data?.clientId ?? data?.client?.id ?? 0);
+      const planId = Number(data?.funeralPlanId ?? data?.planId ?? data?.funeralPlans?.id ?? 0);
+      const activeRaw = data?.isActive ?? data?.ativo ?? data?.status ?? true;
+      const active = typeof activeRaw === 'boolean' ? activeRaw
+        : typeof activeRaw === 'number' ? activeRaw === 1
+        : typeof activeRaw === 'string' ? ['ativo','active','true','1'].includes(activeRaw.toLowerCase())
+        : true;
+      if (Number.isFinite(clientId) && clientId > 0) setSelectedClientId(clientId);
+      if (Number.isFinite(planId) && planId > 0) setSelectedPlanId(planId);
+      setIsActive(active);
+      const dep = Number(data?.dependentCount ?? data?.dependentes ?? 0);
+      setDependentCount(Number.isFinite(dep) && dep >= 0 ? dep : 0);
+    } catch (err: any) {
+      console.error("Erro ao carregar contrato para edição:", err);
+      const message = err?.response?.data?.message || err.message || "Não foi possível carregar o contrato.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [editingId]);
+
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   useEffect(() => {
+    loadExistingContract();
+  }, [loadExistingContract]);
+
+  useEffect(() => {
     const savedClientId = localStorage.getItem("contract_client_id");
     const savedPlanId = localStorage.getItem("contract_plan_id");
-    const savedContractNumber = localStorage.getItem("contract_number") ?? "";
 
     if (savedClientId) {
-      setSelectedClientId(Number(savedClientId));
+      const parsed = Number(savedClientId);
+      setSelectedClientId(Number.isFinite(parsed) ? parsed : null);
     }
 
     if (savedPlanId) {
-      setSelectedPlanId(Number(savedPlanId));
+      const parsed = Number(savedPlanId);
+      setSelectedPlanId(Number.isFinite(parsed) ? parsed : null);
     }
 
-    setContractNumber(savedContractNumber);
   }, []);
 
   useEffect(() => {
-    if (selectedClientId !== "") {
-      localStorage.setItem("contract_client_id", selectedClientId.toString());
+    if (selectedClientId !== null) {
+      localStorage.setItem("contract_client_id", String(selectedClientId));
     }
   }, [selectedClientId]);
 
   useEffect(() => {
-    if (selectedPlanId !== "") {
-      localStorage.setItem("contract_plan_id", selectedPlanId.toString());
+    if (selectedPlanId !== null) {
+      localStorage.setItem("contract_plan_id", String(selectedPlanId));
     }
   }, [selectedPlanId]);
 
+  // não persistir número de contrato (removido)
+
+  // auto-ocultar mensagens de sucesso/erro após 5 segundos
   useEffect(() => {
-    localStorage.setItem("contract_number", contractNumber);
-  }, [contractNumber]);
+    if (!successMessage && !error) return;
+    const timer = setTimeout(() => {
+      setSuccessMessage(null);
+      setError(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [successMessage, error]);
 
   const handleSubmit = async () => {
     if (!selectedClient || !selectedPlan) {
       return;
     }
 
-    const payload = {
-      contrato: contractNumber,
-      planoFunerarioId: selectedPlan.id,
-      clienteId: Number(selectedClientId),
-      companyId: selectedClient.companyId,
+    const newPayload = {
+      // incluir id do contrato quando for edição
+      ...(editingId ? { Id: editingId } : {}),
+      ClientId: selectedClient.id,
+      CompanyId: currentCompanyId ?? selectedClient.companyId,
+      FuneralPlanId: selectedPlanId ?? selectedPlan.id,
+      DependentCount: dependentCount,
+      IsActive: isActive,
+      initialDate: new Date().toISOString(),
     };
 
     const apiService = api();
-    await apiService.post("api/v1/Contracts", payload);
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const resp = editingId
+        ? await apiService.put(`api/v1/Contracts/${editingId}`, newPayload)
+        : await apiService.post("api/v1/Contracts", newPayload);
+      const ok = resp?.status && resp.status >= 200 && resp.status < 300;
+      if (ok) {
+        setSuccessMessage(editingId ? "Contrato atualizado com sucesso!" : "Contrato criado com sucesso!");
+        // reload lists elsewhere if needed
+      } else {
+        setError(editingId ? "Não foi possível atualizar o contrato." : "Não foi possível criar o contrato.");
+      }
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || (editingId ? "Erro ao atualizar contrato" : "Erro ao criar contrato");
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatCurrency = (value: number) =>
@@ -154,7 +229,7 @@ const Contratos = () => {
   );
 
   return (
-    <PageLayout title="Criar contrato" subtitle="Use cadastros existentes para prever IDs automaticamente">
+    <PageLayout title={editingId ? "Editar contrato" : "Criar contrato"} subtitle="Use cadastros existentes para prever IDs automaticamente">
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card className="space-y-6 p-6">
           <div>
@@ -167,49 +242,63 @@ const Contratos = () => {
             )}
           </div>
 
-          <div className="space-y-4">
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Cliente
-              <select
-                className="rounded-lg border border-borderPrimary bg-background p-3 text-sm text-textPrimary"
-                value={selectedClientId}
-                onChange={(event) => setSelectedClientId(Number(event.target.value) || "")}
-                disabled={loading}
-              >
-                <option value="">Selecione um cliente</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} — {client.cpf ?? client.email}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="space-y-4">
+              <label className="flex flex-col gap-1 text-sm font-medium">
+                Cliente
+                <select
+                  className="rounded-lg border border-borderPrimary bg-background p-3 text-sm text-textPrimary"
+                  value={selectedClientId ?? ""}
+                  onChange={(event) => {
+                    const v = Number(event.target.value);
+                    setSelectedClientId(Number.isFinite(v) ? v : null);
+                  }}
+                  disabled={loading}
+                >
+                  <option value="">Selecione um cliente</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name} — {client.cpf ?? client.email}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Plano funerário
-              <select
-                className="rounded-lg border border-borderPrimary bg-background p-3 text-sm text-textPrimary"
-                value={selectedPlanId}
-                onChange={(event) => setSelectedPlanId(Number(event.target.value) || "")}
-                disabled={loading}
-              >
-                <option value="">Selecione um plano</option>
-                {plans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label className="flex flex-col gap-1 text-sm font-medium">
+                Plano funerário
+                <select
+                  className="rounded-lg border border-borderPrimary bg-background p-3 text-sm text-textPrimary"
+                  value={selectedPlanId ?? ""}
+                  onChange={(event) => {
+                    const v = Number(event.target.value);
+                    setSelectedPlanId(Number.isFinite(v) ? v : null);
+                  }}
+                  disabled={loading}
+                >
+                  <option value="">Selecione um plano</option>
+                  {plans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <InputField
-              name="contractNumber"
-              label="Número do contrato"
-              placeholder="CONTRATO-000"
-              value={contractNumber}
-              onChange={(event: { target: { value: SetStateAction<string>; }; }) => setContractNumber(event.target.value)}
-            />
-          </div>
+              <label className="flex flex-col gap-1 text-sm font-medium">
+                Quantidade de dependentes
+                <input
+                  type="number"
+                  min={0}
+                  value={dependentCount}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setDependentCount(Number.isFinite(v) && v >= 0 ? v : 0);
+                  }}
+                  className="rounded-lg border border-borderPrimary bg-background p-3 text-sm text-textPrimary"
+                />
+              </label>
+
+              {/* Número de contrato removido: gerado no backend */}
+            </div>
 
           <div className="flex items-center gap-3 text-sm text-textSecondary">
             <ClipboardList size={18} />
@@ -227,6 +316,25 @@ const Contratos = () => {
               Limpar formulário
             </Button>
           </div>
+
+          <div className="mt-4">
+            <label className="inline-flex items-center gap-3 text-sm text-textPrimary">
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                className="h-4 w-4 rounded border border-borderPrimary accent-primary focus:outline-none"
+              />
+              Manter contrato ativo
+            </label>
+          </div>
+
+          {successMessage && (
+            <p className="mt-2 text-sm text-success">✅ {successMessage}</p>
+          )}
+          {error && (
+            <p className="mt-2 text-sm text-danger">⚠️ {error}</p>
+          )}
         </Card>
 
         <Card className="space-y-6 p-6">
@@ -237,7 +345,6 @@ const Contratos = () => {
           {selectedPlan ? (
             <div className="space-y-6">
               <div className="grid gap-4">
-                {renderSummaryCard("Mensalidade", selectedPlan.monthlyAmount, "Atualizada a cada mês")}
                 {renderSummaryCard("Anuidade", selectedPlan.annualAmount, "Base anual do plano")}
               </div>
               <div className="rounded-lg border border-borderPrimary p-4 text-sm text-textSecondary">

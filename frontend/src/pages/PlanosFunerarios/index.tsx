@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import PageLayout from '../../components/PageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -6,7 +6,7 @@ import InputField from '../../components/Input/InputField';
 import ApiService from '../../services/apiService';
 import Cookies from 'js-cookie';
 import { Save, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 type FuneralPlanForm = {
   name: string;
@@ -17,7 +17,7 @@ type FuneralPlanForm = {
   maxAge: string;
   dependentAdditional: string;
   available: boolean;
-  benefitId: number | null;
+  benefitIds: number[]; // seleção múltipla
 };
 
 type BenefitFormState = {
@@ -40,7 +40,7 @@ const initialPlanForm: FuneralPlanForm = {
   maxAge: '',
   dependentAdditional: '0',
   available: true,
-  benefitId: null
+  benefitIds: []
 };
 
 const initialBenefitForm: BenefitFormState = {
@@ -49,19 +49,20 @@ const initialBenefitForm: BenefitFormState = {
 };
 
 const PlanosFunerarios: React.FC = () => {
-  const api = ApiService();
+  const api = useMemo(() => ApiService(), []);
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
 
   const [form, setForm] = useState<FuneralPlanForm>(() => {
     const saved = Cookies.get('planFormData');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const benefitId = parsed?.benefitId != null ? Number(parsed.benefitId) : null;
+        const benefitIds = Array.isArray(parsed?.benefitIds) ? parsed.benefitIds.map((n: any) => Number(n)).filter((n: number) => Number.isFinite(n)) : [];
         return {
           ...initialPlanForm,
           ...parsed,
-          benefitId: Number.isFinite(benefitId) ? benefitId : null
+          benefitIds
         };
       } catch {
         return initialPlanForm;
@@ -136,6 +137,59 @@ const PlanosFunerarios: React.FC = () => {
     loadBenefits();
   }, [loadBenefits]);
 
+  // Se houver id na rota, carregar plano para visualização/edição
+  const hasFetchedPlanRef = useRef(false);
+  React.useEffect(() => {
+    const loadPlanForEdit = async () => {
+      if (!id) return;
+      if (hasFetchedPlanRef.current) return; // evita chamadas duplicadas em StrictMode
+      hasFetchedPlanRef.current = true;
+      try {
+        setLoading(true);
+        setError(null);
+        const resp = await api.get(`api/v1/FuneralPlans/${id}`);
+        const data = resp?.data?.data ?? resp?.data ?? {};
+        const toStr = (v: any) => (v == null ? '' : String(v));
+        setForm({
+          name: toStr(data?.name ?? data?.nome),
+          description: toStr(data?.description ?? data?.descricao),
+          annualValue: toStr(data?.annualValue ?? data?.valorAnual ?? ''),
+          monthlyValue: toStr(data?.monthlyValue ?? data?.valorMensal ?? ''),
+          maxDependents: toStr(data?.maxDependents ?? data?.maxDependente ?? '0'),
+          maxAge: toStr(data?.maxAge ?? data?.idadeMaxima ?? ''),
+          dependentAdditional: toStr(data?.dependentAdditional ?? data?.adicionalDependente ?? '0'),
+          available: Boolean(data?.available ?? true),
+          benefitIds: Array.isArray(data?.benefitsIds)
+            ? data.benefitsIds.map((x: any) => Number(x)).filter((n: number) => Number.isFinite(n))
+            : [],
+        });
+        // Buscar benefícios vinculados via BenefitsPlans, caso o payload do plano não traga a lista
+        try {
+          const relResp = await api.get('api/v1/BenefitsPlans');
+          const relPayload = Array.isArray(relResp.data) ? relResp.data : (Array.isArray(relResp.data?.data) ? relResp.data.data : []);
+          const planIdNum = Number(id);
+          const linkedIds = (relPayload as any[])
+            .filter((row) => Number(row?.funeralPlansId ?? row?.FuneralPlansId) === planIdNum)
+            .map((row) => Number(row?.benefitsId ?? row?.BenefitsId))
+            .filter((n) => Number.isFinite(n));
+          if (linkedIds.length > 0) {
+            setForm(prev => ({ ...prev, benefitIds: linkedIds }));
+          }
+        } catch (relErr) {
+          // silencioso: se não conseguir carregar relações, mantém lista vazia
+        }
+        setActiveTab('plan');
+      } catch (err: any) {
+        console.error('Erro ao carregar plano:', err);
+        const msg = err?.response?.data?.message || err.message || 'Não foi possível carregar o plano.';
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPlanForEdit();
+  }, [api, id]);
+
   const handleBenefitSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setBenefitError(null);
@@ -178,7 +232,13 @@ const PlanosFunerarios: React.FC = () => {
 
       setBenefitSuccess('Benefício cadastrado com sucesso.');
       setBenefitForm(initialBenefitForm);
-      setForm(prev => ({ ...prev, benefitId: Number.isFinite(idNumber) ? idNumber : prev.benefitId }));
+      // Adiciona o benefício recém-criado à seleção do plano
+      if (Number.isFinite(idNumber)) {
+        setForm(prev => ({
+          ...prev,
+          benefitIds: prev.benefitIds.includes(idNumber) ? prev.benefitIds : [...prev.benefitIds, idNumber]
+        }));
+      }
       setActiveTab('plan');
     } catch (submitError: any) {
       console.error('Erro ao cadastrar benefício:', submitError);
@@ -189,12 +249,24 @@ const PlanosFunerarios: React.FC = () => {
     }
   };
 
-  const handleSelectBenefit = (benefitId: number) => {
-    setForm(prev => ({ ...prev, benefitId }));
+  const handleToggleBenefit = (benefitId: number) => {
+    setForm(prev => {
+      const exists = prev.benefitIds.includes(benefitId);
+      const next = exists ? prev.benefitIds.filter(id => id !== benefitId) : [...prev.benefitIds, benefitId];
+      return { ...prev, benefitIds: next };
+    });
+  };
+
+  const handleAddBenefitToSelection = (benefitId: number) => {
+    setForm(prev => (
+      prev.benefitIds.includes(benefitId)
+        ? prev
+        : { ...prev, benefitIds: [...prev.benefitIds, benefitId] }
+    ));
   };
 
   const handleClearBenefitSelection = () => {
-    setForm(prev => ({ ...prev, benefitId: null }));
+    setForm(prev => ({ ...prev, benefitIds: [] }));
   };
 
   const validate = (): string[] => {
@@ -210,7 +282,7 @@ const PlanosFunerarios: React.FC = () => {
     if (form.maxDependents === '' || isNaN(Number(form.maxDependents)) || Number(form.maxDependents) < 0) errs.push('Máximo de dependentes inválido.');
     if (form.maxAge === '' || isNaN(Number(form.maxAge)) || Number(form.maxAge) < 0) errs.push('Idade máxima inválida.');
     if (form.dependentAdditional === '' || !toPositiveNumber(form.dependentAdditional)) errs.push('Adicional por dependente inválido.');
-    if (form.benefitId == null) errs.push('Selecione ou cadastre um benefício para o plano.');
+    // Benefícios são opcionais neste momento; não validar seleção
     return errs;
   };
 
@@ -225,7 +297,7 @@ const PlanosFunerarios: React.FC = () => {
       maxAge: form.maxAge,
       dependentAdditional: form.dependentAdditional,
       available: form.available,
-      benefitId: form.benefitId,
+      benefitIds: form.benefitIds,
     };
     Cookies.set('planFormData', JSON.stringify(saved), { expires: 1 });
   }, [form]);
@@ -241,7 +313,8 @@ const PlanosFunerarios: React.FC = () => {
 
     setLoading(true);
     try {
-      const payload = {
+      const payload: any = {
+        // Nome é imutável em edição; ainda incluímos para POST, removemos para PUT
         Name: form.name.trim(),
         Description: form.description.trim(),
         AnnualValue: Number(String(form.annualValue).replace(',', '.')),
@@ -252,36 +325,52 @@ const PlanosFunerarios: React.FC = () => {
         Available: form.available
       };
 
-      const planResponse = await api.post('api/v1/FuneralPlans', payload);
+      // Não enviar BenefitsIds no cadastro de FuneralPlans; vínculo será feito via BenefitsPlans
+
+      const isEdit = Boolean(id);
+      // Em edição, nome é bloqueado na UI, mas ainda enviado no JSON
+
+      // 1) Criar ou atualizar plano
+      const isEditId = Number(id);
+      if (isEdit && Number.isFinite(isEditId) && isEditId > 0) {
+        payload.Id = isEditId;
+      }
+      const planResponse = isEdit
+        ? await api.put(`api/v1/FuneralPlans/${id}`, payload)
+        : await api.post('api/v1/FuneralPlans', payload);
       const planData = planResponse?.data?.data ?? planResponse?.data ?? {};
-      const planIdRaw = planData?.id ?? planData?.funeralPlansId ?? planData?.planId;
-      const planId = Number(planIdRaw);
-
-      if (form.benefitId != null) {
-        if (!Number.isFinite(planId)) {
-          throw new Error('Plano cadastrado, porém a API não retornou um identificador válido para vincular o benefício.');
-        }
-
-        try {
-          await api.post('api/v1/BenefitsPlans', {
-            benefitsId: form.benefitId,
-            funeralPlansId: planId
-          });
-        } catch (linkError: any) {
-          console.error('Erro ao vincular benefício ao plano:', linkError);
-          const linkMessage = linkError?.response?.data?.message || linkError.message || 'Não foi possível vincular o benefício ao plano.';
-          throw new Error(`Plano criado, mas houve um problema ao vincular o benefício: ${linkMessage}`);
-        }
+      // Tentar múltiplas variações de nome/casing para o ID retornado pelo backend
+      const planIdRaw = planData?.id ?? planData?.Id ?? planData?.funeralPlansId ?? planData?.FuneralPlansId ?? planData?.planId ?? planData?.PlanId;
+      let planId = Number(planIdRaw);
+      if ((!Number.isFinite(planId) || planId <= 0) && isEdit && Number.isFinite(isEditId) && isEditId > 0) {
+        // Em PUT, alguns backends não retornam o objeto; usar o id da rota
+        planId = isEditId;
+      }
+      // 2) Vincular benefícios ao plano através do endpoint BenefitsPlans, se houver seleção
+      if (Number.isFinite(planId) && planId > 0 && Array.isArray(form.benefitIds) && form.benefitIds.length > 0) {
+        const linkPayload = {
+          FuneralPlansId: planId,
+          BenefitsIds: form.benefitIds.map(n => Number(n))
+        };
+        await api.post('api/v1/BenefitsPlans', linkPayload);
       }
 
       // limpar cache local do formulário
       Cookies.remove('planFormData');
       setSuccess(true);
+      // confirmação visual imediata
+      try { window.alert('Plano cadastrado com sucesso!'); } catch {}
       setForm(initialPlanForm);
-      setTimeout(() => navigate('/planosfunerarios'), 1200);
+      setTimeout(() => navigate('/gerenciarPlanos'), 800);
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err.message || 'Erro ao salvar plano funerário';
+      // Tentar extrair mensagens de validação do backend
+      const backend = err?.response?.data;
+      const status = err?.response?.status;
+      const validation = backend?.errors ? JSON.stringify(backend.errors) : null;
+      const msgBase = backend?.message || err.message || 'Erro ao salvar plano funerário';
+      const msg = status === 400 && validation ? `${msgBase} | ${validation}` : msgBase;
       setError(msg);
+      try { window.alert(`Falha no cadastro do plano: ${msg}`); } catch {}
     } finally {
       setLoading(false);
     }
@@ -292,7 +381,7 @@ const PlanosFunerarios: React.FC = () => {
       title="Cadastro de Planos Funerários"
       subtitle="Crie e gerencie os planos oferecidos"
       actions={
-        <Button variant="outline" icon={X} onClick={() => navigate('/gerenciarplanos')} disabled={loading || benefitSubmitting}>
+        <Button variant="outline" icon={X} onClick={() => navigate('/gerenciarPlanos')} disabled={loading || benefitSubmitting}>
           Voltar
         </Button>
       }
@@ -408,10 +497,7 @@ const PlanosFunerarios: React.FC = () => {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => {
-                            handleSelectBenefit(benefit.id);
-                            setActiveTab('plan');
-                          }}
+                          onClick={() => { handleAddBenefitToSelection(benefit.id); setActiveTab('plan'); }}
                         >
                           Utilizar no plano
                         </Button>
@@ -440,7 +526,7 @@ const PlanosFunerarios: React.FC = () => {
             <Card>
               <h3 className="text-lg font-semibold text-textPrimary mb-4">Dados do Plano</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField label="Nome do Plano" name="name" value={form.name} onChange={handleChange} required className="bg-background" />
+                <InputField label="Nome do Plano" name="name" value={form.name} onChange={handleChange} required className="bg-background" disabled={Boolean(id)} />
                 <InputField label="Valor Mensal" name="monthlyValue" value={form.monthlyValue} onChange={handleChange} required className="bg-background" />
                 <InputField label="Valor Anual" name="annualValue" value={form.annualValue} onChange={handleChange} required className="bg-background" />
                 <InputField label="Máx. Dependentes" name="maxDependents" type="number" value={form.maxDependents} onChange={handleChange} className="bg-background" />
@@ -473,7 +559,7 @@ const PlanosFunerarios: React.FC = () => {
             </Card>
 
             <Card>
-              <h3 className="text-lg font-semibold text-textPrimary mb-4">Benefício vinculado</h3>
+              <h3 className="text-lg font-semibold text-textPrimary mb-4">Benefícios vinculados</h3>
               {benefitsLoading ? (
                 <p className="text-sm text-textSecondary">Carregando benefícios cadastrados...</p>
               ) : benefitsFetchError ? (
@@ -496,27 +582,30 @@ const PlanosFunerarios: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {benefits.map((benefit) => (
-                    <label
-                      key={benefit.id}
-                      className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition ${form.benefitId === benefit.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-borderPrimary hover:border-primary/60'}`}
-                    >
-                      <input
-                        type="radio"
-                        name="benefitSelection"
-                        value={benefit.id}
-                        checked={form.benefitId === benefit.id}
-                        onChange={() => handleSelectBenefit(benefit.id)}
-                        className="mt-1 h-4 w-4 text-primary focus:ring-primary"
-                      />
-                      <div>
-                        <p className="font-medium text-textPrimary">{benefit.name}</p>
-                        {benefit.description && (
-                          <p className="text-sm text-textSecondary mt-1">{benefit.description}</p>
-                        )}
-                      </div>
-                    </label>
-                  ))}
+                  {benefits.map((benefit) => {
+                    const selected = form.benefitIds.includes(benefit.id);
+                    return (
+                      <label
+                        key={benefit.id}
+                        className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition ${selected ? 'border-primary bg-primary/5 shadow-sm' : 'border-borderPrimary hover:border-primary/60'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          name="benefitSelection"
+                          value={benefit.id}
+                          checked={selected}
+                          onChange={() => handleToggleBenefit(benefit.id)}
+                          className="mt-1 h-4 w-4 text-primary focus:ring-primary"
+                        />
+                        <div>
+                          <p className="font-medium text-textPrimary">{benefit.name}</p>
+                          {benefit.description && (
+                            <p className="text-sm text-textSecondary mt-1">{benefit.description}</p>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
 
@@ -524,7 +613,7 @@ const PlanosFunerarios: React.FC = () => {
                 <Button type="button" variant="outline" onClick={() => setActiveTab('benefit')}>
                   Cadastrar novo benefício
                 </Button>
-                {form.benefitId != null && (
+                {Array.isArray(form.benefitIds) && form.benefitIds.length > 0 && (
                   <Button type="button" variant="ghost" onClick={handleClearBenefitSelection}>
                     Remover seleção
                   </Button>
