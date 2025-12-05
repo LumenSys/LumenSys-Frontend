@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { Search, Plus, Edit2, Eye, Filter, Download, Settings, Users, Calendar, DollarSign } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Search, Plus, Edit2, Eye, Filter, Download, Settings, Users, Calendar, DollarSign, RefreshCcw } from 'lucide-react';
 import PageLayout from '../../components/PageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import StatsCard from '../../components/StatsCard';
 import AccessibilityPanel from "../../components/AccessibilityPanel";
+import ApiService from "../../services/apiService";
 
 
 interface Plano {
@@ -21,71 +22,144 @@ interface Plano {
   dataCriacao: string;
 }
 
-const planosExemplo: Plano[] = [
-  {
-    id: 1,
-    nome: 'Plano Básico',
-    descricao: 'Cobertura essencial para necessidades básicas',
-    valorAnual: 1200.00,
-    foraDeAr: false,
-    maxDependente: 2,
-    idadeMaxima: 65,
-    adicionalDependente: 150.00,
-    status: 'ativo',
-    totalClientes: 124,
-    dataCriacao: '15/01/2024'
-  },
-  {
-    id: 2,
-    nome: 'Plano Premium',
-    descricao: 'Cobertura completa com benefícios adicionais',
-    valorAnual: 2500.00,
-    foraDeAr: true,
-    maxDependente: 4,
-    idadeMaxima: 75,
-    adicionalDependente: 200.00,
-    status: 'ativo',
-    totalClientes: 89,
-    dataCriacao: '10/02/2024'
-  },
-  {
-    id: 3,
-    nome: 'Plano Família',
-    descricao: 'Ideal para famílias grandes',
-    valorAnual: 3200.00,
-    foraDeAr: true,
-    maxDependente: 6,
-    idadeMaxima: 80,
-    adicionalDependente: 180.00,
-    status: 'ativo',
-    totalClientes: 67,
-    dataCriacao: '05/03/2024'
-  },
-  {
-    id: 4,
-    nome: 'Plano Jovem',
-    descricao: 'Especial para pessoas até 35 anos',
-    valorAnual: 800.00,
-    foraDeAr: false,
-    maxDependente: 1,
-    idadeMaxima: 35,
-    adicionalDependente: 120.00,
-    status: 'rascunho',
-    totalClientes: 0,
-    dataCriacao: '20/03/2024'
-  }
-];
-
 export default function GerenciarPlanos() {
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ativo' | 'inativo' | 'rascunho'>('todos');
+  const [planos, setPlanos] = useState<Plano[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const planosFiltrados = planosExemplo.filter((plano) => {
-    const matchesBusca = plano.nome.toLowerCase().includes(busca.toLowerCase()) ||
-                        plano.descricao.toLowerCase().includes(busca.toLowerCase());
-    const matchesStatus = filtroStatus === 'todos' || plano.status === filtroStatus;
-    return matchesBusca && matchesStatus;
-  });
+  const loadPlanos = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const apiService = ApiService();
+      const response = await apiService.get('api/v1/FuneralPlans');
+      const payload = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+
+      const normalized: Plano[] = (payload as any[]).reduce((acc, raw) => {
+        const rawId = raw?.id ?? raw?.funeralPlansId ?? raw?.planId ?? raw?.PlanId;
+        const id = Number(rawId);
+        if (!Number.isFinite(id)) {
+          return acc;
+        }
+
+        const availableRaw = raw?.available ?? raw?.Available ?? raw?.status;
+        const available = typeof availableRaw === 'string'
+          ? availableRaw.toLowerCase() === 'ativo'
+          : Boolean(availableRaw ?? true);
+
+        const statusRaw = typeof raw?.status === 'string' ? raw.status.toLowerCase() : undefined;
+        const status: Plano['status'] = statusRaw === 'rascunho'
+          ? 'rascunho'
+          : statusRaw === 'inativo'
+            ? 'inativo'
+            : available ? 'ativo' : 'inativo';
+
+        const coverageRaw = raw?.coverage ?? raw?.Coverage ?? raw?.foraDeAr;
+        const foraDeAr = typeof coverageRaw === 'string'
+          ? coverageRaw.toLowerCase() === 'nacional'
+          : Boolean(coverageRaw);
+
+        const creationRaw = raw?.createdAt ?? raw?.creationDate ?? raw?.dataCriacao ?? '';
+        const creationDate = (() => {
+          if (!creationRaw) return '';
+          const parsed = new Date(creationRaw);
+          return Number.isNaN(parsed.getTime()) ? String(creationRaw) : parsed.toLocaleDateString('pt-BR');
+        })();
+
+        acc.push({
+          id,
+          nome: raw?.name ?? raw?.title ?? `Plano ${id}`,
+          descricao: raw?.description ?? raw?.details ?? 'Sem descrição disponível.',
+          valorAnual: Number(raw?.annualValue ?? raw?.AnnualValue ?? raw?.valorAnual ?? raw?.annualAmount ?? 0),
+          foraDeAr,
+          maxDependente: Number(raw?.maxDependents ?? raw?.MaxDependents ?? raw?.maxDependente ?? 0),
+          idadeMaxima: Number(raw?.maxAge ?? raw?.MaxAge ?? raw?.idadeMaxima ?? 0),
+          adicionalDependente: Number(raw?.dependentAdditional ?? raw?.DependentAdditional ?? raw?.adicionalDependente ?? 0),
+          status,
+          totalClientes: Number(raw?.totalClientes ?? raw?.TotalClientes ?? raw?.clientsCount ?? raw?.clientCount ?? 0),
+          dataCriacao: creationDate,
+        });
+
+        return acc;
+      }, [] as Plano[]);
+
+      setPlanos(normalized);
+    } catch (loadError: any) {
+      console.error('Erro ao carregar planos funerários:', loadError);
+      const message = loadError?.response?.data?.message || loadError.message || 'Não foi possível carregar os planos cadastrados.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPlanos();
+  }, [loadPlanos]);
+
+  const planosFiltrados = useMemo(() => {
+    return planos.filter((plano) => {
+      const matchesBusca = plano.nome.toLowerCase().includes(busca.toLowerCase()) ||
+        plano.descricao.toLowerCase().includes(busca.toLowerCase());
+      const matchesStatus = filtroStatus === 'todos' || plano.status === filtroStatus;
+      return matchesBusca && matchesStatus;
+    });
+  }, [planos, busca, filtroStatus]);
+
+  const { totalPlanos, planosAtivos, totalClientes, receitaTotal } = useMemo(() => {
+    const total = planos.length;
+    const ativos = planos.filter(p => p.status === 'ativo').length;
+    const clientes = planos.reduce((sum, p) => sum + (Number.isFinite(p.totalClientes) ? p.totalClientes : 0), 0);
+    const receita = planos.reduce((sum, p) => sum + p.valorAnual * (Number.isFinite(p.totalClientes) ? p.totalClientes : 0), 0);
+    return {
+      totalPlanos: total,
+      planosAtivos: ativos,
+      totalClientes: clientes,
+      receitaTotal: receita,
+    };
+  }, [planos]);
+
+  const statsData = useMemo(() => {
+    const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      maximumFractionDigits: 0,
+    });
+
+    return [
+      {
+        title: "Total de Planos",
+        value: loading ? '...' : totalPlanos,
+        icon: Settings,
+        iconColor: "text-blue-600"
+      },
+      {
+        title: "Planos Ativos",
+        value: loading ? '...' : planosAtivos,
+        icon: Calendar,
+        iconColor: "text-green-600"
+      },
+      {
+        title: "Total Clientes",
+        value: loading ? '...' : totalClientes,
+        icon: Users,
+        iconColor: "text-purple-600"
+      },
+      {
+        title: "Receita Anual",
+        value: loading ? '...' : currencyFormatter.format(receitaTotal),
+        icon: DollarSign,
+        iconColor: "text-green-600"
+      }
+    ];
+  }, [loading, totalPlanos, planosAtivos, totalClientes, receitaTotal]);
 
   const getStatusBadge = (status: string) => {
     const statusStyles = {
@@ -114,41 +188,6 @@ export default function GerenciarPlanos() {
   };
 
   // Estatísticas
-  const totalPlanos = planosExemplo.length;
-  const planosAtivos = planosExemplo.filter(p => p.status === 'ativo').length;
-  const totalClientes = planosExemplo.reduce((sum, p) => sum + p.totalClientes, 0);
-  const receitaTotal = planosExemplo.reduce((sum, p) => sum + (p.valorAnual * p.totalClientes), 0);
-
-  const statsData = [
-    {
-      title: "Total de Planos",
-      value: totalPlanos,
-      icon: Settings,
-      iconColor: "text-blue-600"
-    },
-    {
-      title: "Planos Ativos",
-      value: planosAtivos,
-      icon: Calendar,
-      iconColor: "text-green-600"
-    },
-    {
-      title: "Total Clientes",
-      value: totalClientes,
-      icon: Users,
-      iconColor: "text-purple-600"
-    },
-    {
-      title: "Receita Anual",
-      value: receitaTotal.toLocaleString('pt-BR', { 
-        style: 'currency', 
-        currency: 'BRL', 
-        maximumFractionDigits: 0 
-      }),
-      icon: DollarSign,
-      iconColor: "text-green-600"
-    }
-  ];
 
   return (
     <PageLayout
@@ -206,6 +245,16 @@ export default function GerenciarPlanos() {
               <option value="rascunho">Rascunhos</option>
             </select>
           </div>
+
+          <Button
+            variant="outline"
+            icon={RefreshCcw}
+            size="md"
+            onClick={loadPlanos}
+            disabled={loading}
+          >
+            {loading ? 'Atualizando...' : 'Atualizar dados'}
+          </Button>
         </div>
       </Card>
 
@@ -239,7 +288,13 @@ export default function GerenciarPlanos() {
               </tr>
             </thead>
             <tbody className="bg-surface divide-y divide-footer">
-              {planosFiltrados.map((plano) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-textSecondary">
+                    Carregando planos cadastrados...
+                  </td>
+                </tr>
+              ) : planosFiltrados.map((plano) => (
                 <tr key={plano.id} className="hover:bg-footer/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -289,7 +344,7 @@ export default function GerenciarPlanos() {
           </table>
         </div>
 
-        {planosFiltrados.length === 0 && (
+        {!loading && planosFiltrados.length === 0 && (
           <div className="text-center py-12">
             <div className="text-textSecondary">
               {busca ? `Nenhum plano encontrado para "${busca}"` : 'Nenhum plano encontrado'}
@@ -309,6 +364,11 @@ export default function GerenciarPlanos() {
           </div>
         </div>
       </Card>
+      {error && (
+        <Card className="bg-danger/10 border-danger/20">
+          <p className="text-sm text-danger">⚠️ {error}</p>
+        </Card>
+      )}
      <AccessibilityPanel />
     </PageLayout>
   );
