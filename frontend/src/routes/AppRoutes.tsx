@@ -13,7 +13,10 @@ import Servicos from "../pages/Servicos";
 import ContratosPage from "../pages/Contratos";
 import PlanosFunerarios from "../pages/PlanosFunerarios";
 import GerenciarContratos from "../pages/GerenciarContratos";
+import CadastroCliente from "../pages/CadastroCliente";
 import CriarContrato from "../pages/Contratos";
+import PerfilEmpresa from "../pages/PerfilEmpresa";
+
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -29,8 +32,13 @@ export const router = createBrowserRouter(
       <Route path={routes.SERVICOS} element={<Servicos />} />
       <Route path={routes.CONTRATOS} element={<ContratosPage />} />
       <Route path={routes.PLANOS_FUNERARIOS} element={<PlanosFunerarios />} />
+      <Route path={`${routes.PLANOS_FUNERARIOS}/:id`} element={<PlanosFunerarios />} />
       <Route path={routes.GERENCIAR_CONTRATOS} element={<GerenciarContratos />} />
-      <Route path={routes.CRIAR_CONTRATO} element={<CriarContrato />} />
+      <Route path={routes.CADASTRO_CLIENTE} element={<CadastroCliente />} />
+      <Route path={routes.PERFIL_EMPRESA} element={<PerfilEmpresa />} />
+        <Route path={routes.CRIAR_CONTRATO} element={<CriarContrato />} />
+        <Route path={`${routes.CRIAR_CONTRATO}/:id`} element={<CriarContrato />} />
+        <Route path={routes.CADASTRO_CLIENTE} element={<CadastroCliente />} />
       <Route path="*" element={<NotFound />} />
       </Route>
 </>

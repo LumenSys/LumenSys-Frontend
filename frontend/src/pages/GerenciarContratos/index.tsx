@@ -1,287 +1,304 @@
-// src/pages/GerenciarContratos/index.tsx
-import React, { useState } from "react";
-import { Add, Visibility, Search } from "@mui/icons-material";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Add, PersonAdd, Search } from "@mui/icons-material";
+import { Tabs, Tab } from "@mui/material";
 import {
+    Alert,
     Box,
     Button,
     Card,
-    CardContent,
     Chip,
     Container,
-    Tab,
-    Tabs,
-    Typography,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
-    MenuItem,
+    Divider,
     InputAdornment,
     List,
     ListItem,
     ListItemText,
-    ListItemSecondaryAction,
-    IconButton,
-    Divider,
-    Avatar,
+    TextField,
+    Typography,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import ApiService from "../../services/apiService";
+import AccessibilityPanel from "../../components/AccessibilityPanel";
 
-type ContractType = "Premium" | "Padrão" | "Básico";
-type ContractStatus = "Ativo" | "Cancelado" | "Suspenso";
+type ContractStatus = "Ativo" | "Inativo";
 
-interface Contract {
+interface ClientSummary {
     id: number;
-    nomeAssinante: string;
-    cpf: string;
-    telefone: string;
-    plano: ContractType;
+    name: string;
+    cpf?: string;
+    phone?: string;
+}
+
+interface PlanSummary {
+    id: number;
+    name: string;
+}
+
+interface NormalizedContract {
+    id: number;
+    clientId: number;
+    planId?: number;
+    startDate?: string;
+    endDate?: string;
+    dependentCount: number;
+    value: number;
+    monthlyFee?: number;
+    isActive: boolean;
+}
+
+interface ContractListItem {
+    id: number;
+    clientName: string;
+    cpf?: string;
+    phone?: string;
+    planName?: string;
     status: ContractStatus;
-    dataContratacao: string;
-    valorMensal: number;
-    dependentes: number;
+    startDate?: string;
+    endDate?: string;
+    value: number;
+    monthlyFee?: number;
+    dependentCount: number;
 }
 
-// Interface específica para o formulário com tipos string para inputs
-interface NewContractForm {
-    nomeAssinante: string;
-    cpf: string;
-    telefone: string;
-    plano: ContractType;
-    valorMensal: string; // String para o input
-    dependentes: string; // String para o input
-}
+const formatCurrency = (value: number) =>
+    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const initialContracts: Contract[] = [
-    {
-        id: 1,
-        nomeAssinante: "João Silva Santos",
-        cpf: "123.456.789-01",
-        telefone: "(11) 99999-1234",
-        plano: "Premium",
-        status: "Ativo",
-        dataContratacao: "2024-01-15",
-        valorMensal: 299.90,
-        dependentes: 3,
-    },
-    {
-        id: 2,
-        nomeAssinante: "Maria Oliveira Costa",
-        cpf: "987.654.321-09",
-        telefone: "(11) 88888-5678",
-        plano: "Básico",
-        status: "Cancelado",
-        dataContratacao: "2023-11-20",
-        valorMensal: 89.90,
-        dependentes: 1,
-    },
-    {
-        id: 3,
-        nomeAssinante: "Carlos Eduardo Pereira",
-        cpf: "456.789.123-45",
-        telefone: "(11) 77777-9012",
-        plano: "Padrão",
-        status: "Ativo",
-        dataContratacao: "2024-03-10",
-        valorMensal: 179.90,
-        dependentes: 2,
-    },
-    {
-        id: 4,
-        nomeAssinante: "Ana Paula Rodrigues",
-        cpf: "321.654.987-12",
-        telefone: "(11) 66666-3456",
-        plano: "Premium",
-        status: "Suspenso",
-        dataContratacao: "2023-12-05",
-        valorMensal: 299.90,
-        dependentes: 4,
-    },
-    {
-        id: 5,
-        nomeAssinante: "Roberto Lima Souza",
-        cpf: "789.123.456-78",
-        telefone: "(11) 55555-7890",
-        plano: "Básico",
-        status: "Ativo",
-        dataContratacao: "2024-02-28",
-        valorMensal: 89.90,
-        dependentes: 0,
-    },
-];
+const formatDate = (value?: string) => {
+    if (!value) return "-";
+    const [datePart] = value.split("T");
+    const segments = datePart?.split("-") ?? [];
+    if (segments.length !== 3 || segments.some((segment) => !segment)) return "-";
+    const [year, month, day] = segments;
+    return `${day}/${month}/${year}`;
+};
 
-const contractTypes: ContractType[] = ["Premium", "Padrão", "Básico"];
-const contractStatuses: ContractStatus[] = ["Ativo", "Cancelado", "Suspenso"];
+const formatCpf = (value?: string) => {
+    if (!value) return undefined;
+    const digits = value.replace(/\D/g, "");
+    if (digits.length !== 11) return value;
+    return digits
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d{2})$/, "$1-$2");
+};
+
+const formatPhone = (value?: string) => {
+    if (!value) return undefined;
+    const digits = value.replace(/\D/g, "");
+    if (digits.length < 10 || digits.length > 11) return value;
+    const pattern = digits.length === 11 ? /(\d{2})(\d{5})(\d{4})/ : /(\d{2})(\d{4})(\d{4})/;
+    const match = digits.match(pattern);
+    if (!match) return value;
+    const [, area, first, second] = match;
+    return `(${area}) ${first}-${second}`;
+};
+
+const extractArray = (payload: any) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+};
 
 export default function GerenciarContratos() {
-    const [contracts, setContracts] = useState<Contract[]>(initialContracts);
-    const [tab, setTab] = useState<ContractStatus | "Todos">("Todos");
+    const navigate = useNavigate();
+    const [contracts, setContracts] = useState<ContractListItem[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [openDialog, setOpenDialog] = useState(false);
-    
-    // Use a interface específica do formulário
-    const [newContract, setNewContract] = useState<NewContractForm>({
-        nomeAssinante: "",
-        cpf: "",
-        telefone: "",
-        plano: "Básico",
-        valorMensal: "89.90",
-        dependentes: "0",
-    });
+    const [tabValue, setTabValue] = useState<number>(0);
 
-    const handleTabChange = (_: React.SyntheticEvent, value: string) => {
-        setTab(value as ContractStatus | "Todos");
-    };
+    const loadContracts = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const api = ApiService();
+            const [contractsResponse, clientsResponse, plansResponse] = await Promise.all([
+                api.get("api/v1/Contracts"),
+                api.get("api/v1/Client"),
+                api.get("api/v1/FuneralPlans"),
+            ]);
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
-    };
+            const rawContracts = extractArray(contractsResponse.data);
+            const rawClients = extractArray(clientsResponse.data);
+            const rawPlans = extractArray(plansResponse.data);
 
-    const handleOpenDialog = () => setOpenDialog(true);
-    
-    const handleCloseDialog = () => {
-        setOpenDialog(false);
-        setNewContract({
-            nomeAssinante: "",
-            cpf: "",
-            telefone: "",
-            plano: "Básico",
-            valorMensal: "89.90",
-            dependentes: "0",
+            const clients: ClientSummary[] = rawClients
+                .map((client: any) => ({
+                    id: Number(client.id ?? client.clientId ?? client.clienteId ?? 0),
+                    name: client.name ?? "Cliente sem nome",
+                    cpf: client.cpf ?? client.document ?? undefined,
+                    phone: client.phone ?? client.telefone ?? undefined,
+                }))
+                .filter((client: ClientSummary) => Number.isFinite(client.id) && client.id > 0);
+
+            const plans: PlanSummary[] = rawPlans
+                .map((plan: any) => ({
+                    id: Number(plan.id ?? plan.planId ?? 0),
+                    name: plan.name ?? plan.title ?? "Plano sem nome",
+                }))
+                .filter((plan: PlanSummary) => Number.isFinite(plan.id) && plan.id > 0);
+
+            const normalizedContracts: NormalizedContract[] = rawContracts
+                .map((contract: any) => {
+                    const contractId = Number(contract.id ?? contract.contractId ?? 0);
+                    const clientId = Number(contract.clientId ?? contract.clienteId ?? contract.client?.id ?? 0);
+                    const planId = Number(contract.funeralPlanId ?? contract.planId ?? contract.planoFunerarioId ?? 0);
+                    const startDate = (contract.startDate ?? contract.dataInicio ?? contract.start_date ?? "")?.toString();
+                    const endDate = (contract.endDate ?? contract.dataFim ?? contract.end_date ?? "")?.toString();
+                    const dependentCount = Number(contract.dependentCount ?? contract.quantidadeDependentes ?? contract.dependentes ?? 0);
+                    const value = Number(contract.value ?? contract.valor ?? contract.total ?? 0);
+                    const monthlyFee = Number(contract.monthlyFee ?? contract.mensalidade ?? contract.monthlyAmount ?? 0);
+                    const rawStatus = contract.isActive ?? contract.ativo ?? contract.status ?? false;
+
+                    let isActive = false;
+                    if (typeof rawStatus === "boolean") {
+                        isActive = rawStatus;
+                    } else if (typeof rawStatus === "number") {
+                        isActive = rawStatus === 1;
+                    } else if (typeof rawStatus === "string") {
+                        const normalized = rawStatus.toLowerCase();
+                        isActive = ["ativo", "active", "true", "1"].includes(normalized);
+                    }
+
+                    return {
+                        id: contractId,
+                        clientId,
+                        planId: Number.isFinite(planId) && planId > 0 ? planId : undefined,
+                        startDate,
+                        endDate,
+                        dependentCount: Number.isFinite(dependentCount) && dependentCount >= 0 ? dependentCount : 0,
+                        value: Number.isFinite(value) ? value : 0,
+                        monthlyFee: Number.isFinite(monthlyFee) && monthlyFee > 0 ? monthlyFee : undefined,
+                        isActive,
+                    };
+                })
+                .filter(
+                    (contract: NormalizedContract) =>
+                        Number.isFinite(contract.id) && contract.id > 0 && Number.isFinite(contract.clientId) && contract.clientId > 0
+                );
+
+            const detailedContracts: ContractListItem[] = normalizedContracts
+                .map((contract) => {
+                    const client = clients.find((item) => item.id === contract.clientId);
+                    const plan = contract.planId ? plans.find((item) => item.id === contract.planId) : undefined;
+
+                    return {
+                        id: contract.id,
+                        clientName: client?.name ?? `Cliente #${contract.clientId}`,
+                        cpf: client?.cpf,
+                        phone: client?.phone,
+                        planName: plan?.name,
+                        status: contract.isActive ? "Ativo" : "Inativo",
+                        startDate: contract.startDate,
+                        endDate: contract.endDate,
+                        value: contract.value,
+                        monthlyFee: contract.monthlyFee,
+                        dependentCount: contract.dependentCount,
+                    };
+                })
+                .sort((a, b) => a.id - b.id);
+
+            setContracts(detailedContracts);
+        } catch (loadError: any) {
+            console.error("Erro ao carregar contratos:", loadError);
+            const message = loadError?.response?.data?.message ?? loadError.message ?? "Não foi possível carregar contratos.";
+            setError(message);
+            setContracts([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadContracts();
+    }, [loadContracts]);
+
+    const filteredContracts = useMemo(() => {
+        if (!searchTerm) return contracts;
+        const normalizedTerm = searchTerm.toLowerCase();
+        const numericTerm = searchTerm.replace(/\D/g, "");
+        return contracts.filter((contract) => {
+            const matchesName = contract.clientName.toLowerCase().includes(normalizedTerm);
+            const matchesPlan = contract.planName?.toLowerCase().includes(normalizedTerm);
+            const matchesId = contract.id.toString().includes(numericTerm);
+            const matchesCpf = contract.cpf?.replace(/\D/g, "").includes(numericTerm);
+            const matchesPhone = contract.phone?.replace(/\D/g, "").includes(numericTerm);
+            return matchesName || matchesPlan || matchesId || matchesCpf || matchesPhone;
         });
-    };
-
-    const handleInputChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-        const { name, value } = e.target;
-        
-        // Formatação automática para campos específicos
-        let formattedValue = value;
-        
-        if (name === 'cpf') {
-            formattedValue = value
-                .replace(/\D/g, '')
-                .replace(/(\d{3})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-                .replace(/(-\d{2})\d+?$/, '$1');
-        } else if (name === 'telefone') {
-            formattedValue = value
-                .replace(/\D/g, '')
-                .replace(/(\d{2})(\d)/, '($1) $2')
-                .replace(/(\d{5})(\d)/, '$1-$2')
-                .replace(/(-\d{4})\d+?$/, '$1');
-        }
-        
-        // Agora todos os valores são strings
-        setNewContract({ ...newContract, [name]: formattedValue });
-    };
-
-    const handleCreateContract = () => {
-        if (!newContract.nomeAssinante || !newContract.cpf || !newContract.telefone) return;
-        
-        const newId = Math.max(...contracts.map(c => c.id), 0) + 1;
-        
-        // Conversão de string para number aqui
-        setContracts([
-            ...contracts,
-            {
-                id: newId,
-                nomeAssinante: newContract.nomeAssinante,
-                cpf: newContract.cpf,
-                telefone: newContract.telefone,
-                plano: newContract.plano,
-                status: "Ativo" as ContractStatus,
-                dataContratacao: new Date().toISOString().slice(0, 10),
-                valorMensal: parseFloat(newContract.valorMensal) || 89.90,
-                dependentes: parseInt(newContract.dependentes) || 0,
-            },
-        ]);
-        handleCloseDialog();
-    };
-
-    const handleChangeStatus = (contractId: number, newStatus: ContractStatus) => {
-        setContracts(
-            contracts.map((c) =>
-                c.id === contractId ? { ...c, status: newStatus } : c
-            )
-        );
-    };
-
-    // Filtrar contratos por status e termo de busca
-    const filteredContracts = contracts.filter((contract) => {
-        const matchesTab = tab === "Todos" || contract.status === tab;
-        const matchesSearch = contract.nomeAssinante
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase());
-        return matchesTab && matchesSearch;
-    });
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(value);
-    };
-
-    const getStatusColor = (status: ContractStatus) => {
-        switch (status) {
-            case "Ativo":
-                return "success";
-            case "Cancelado":
-                return "error";
-            case "Suspenso":
-                return "warning";
-            default:
-                return "default";
-        }
-    };
-
-    const getPlanoColor = (plano: ContractType) => {
-        switch (plano) {
-            case "Premium":
-                return "primary";
-            case "Padrão":
-                return "info";
-            case "Básico":
-                return "secondary";
-            default:
-                return "default";
-        }
-    };
+    }, [contracts, searchTerm]);
 
     return (
-        <Container maxWidth="lg" sx={{ py: 5 }}>
-            {/* Header */}
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Container maxWidth="lg" className="py-5">
+            {/* Abas para navegação: Lista de Contratos / Dependentes */}
+            <Box mb={3} display="flex" justifyContent="center">
+                <Tabs
+                    value={tabValue}
+                    onChange={(_, newValue) => {
+                        setTabValue(newValue);
+                        if (newValue === 1) {
+                            navigate("/gerenciarContratos/dependentes");
+                        }
+                    }}
+                    indicatorColor="primary"
+                    textColor="primary"
+                >
+                    <Tab label="Contratos" />
+                    <Tab label="Dependentes" />
+                </Tabs>
+            </Box>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={4} flexWrap="wrap" gap={2}>
                 <div>
                     <Typography variant="h4" fontWeight={700}>
                         Contratos de Clientes
                     </Typography>
                     <Typography variant="body1" color="text.secondary" mt={1}>
-                        Gerencie os contratos dos seus clientes da funerária
+                        Visualize os contratos cadastrados de maneira simples.
                     </Typography>
                 </div>
-                <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => {
-                        window.location.href = "/criarcontrato";
-                    }}
-                    size="large"
-                >
-                    Novo Contrato
-                </Button>
+                <Box display="flex" gap={2} flexWrap="wrap">
+                    <Button
+                        variant="outlined"
+                        startIcon={<PersonAdd />}
+                        onClick={() => navigate("/gerenciarContratos/cadastrarCliente")}
+                        size="large"
+                        className="border-primary text-primary hover:bg-primary/10"
+                    >
+                        Novo Cliente
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => navigate("/gerenciarContratos/criarContrato")}
+                        size="large"
+                        className="bg-primary text-white hover:bg-primary/90"
+                    >
+                        Novo Contrato
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        onClick={() => navigate("/gerenciarContratos/dependentes")}
+                        size="large"
+                    >
+                        Cadastro de Dependentes
+                    </Button>
+                    <Button variant="outlined" onClick={loadContracts} disabled={loading} size="large">
+                        {loading ? "Atualizando..." : "Atualizar"}
+                    </Button>
+                </Box>
             </Box>
 
-            {/* Search Bar */}
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                </Alert>
+            )}
+
             <Box mb={3}>
                 <TextField
                     fullWidth
-                    placeholder="Buscar por nome do assinante..."
+                    placeholder="Buscar por cliente"
                     value={searchTerm}
-                    onChange={handleSearchChange}
+                    onChange={(event) => setSearchTerm(event.target.value)}
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
@@ -289,227 +306,90 @@ export default function GerenciarContratos() {
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ maxWidth: 400 }}
+                    sx={{ maxWidth: 480 }}
                 />
             </Box>
 
-            {/* Tabs */}
-            <Tabs
-                value={tab}
-                onChange={handleTabChange}
-                indicatorColor="primary"
-                textColor="primary"
-                sx={{ mb: 3 }}
-            >
-                <Tab label="Todos" value="Todos" />
-                {contractStatuses.map((status) => (
-                    <Tab key={status} label={status} value={status} />
-                ))}
-            </Tabs>
-
-            {/* Contracts List */}
             <Card>
-                <List>
-                    {filteredContracts.length === 0 ? (
-                        <ListItem>
-                            <ListItemText
-                                primary={
-                                    <Typography color="text.secondary" align="center">
-                                        {searchTerm 
-                                            ? `Nenhum contrato encontrado para "${searchTerm}"`
-                                            : "Nenhum contrato encontrado."
-                                        }
-                                    </Typography>
-                                }
-                            />
-                        </ListItem>
-                    ) : (
-                        filteredContracts.map((contract, index) => (
-                            <React.Fragment key={contract.id}>
-                                <ListItem
-                                    sx={{
-                                        py: 2,
-                                        '&:hover': {
-                                            backgroundColor: 'action.hover',
-                                        },
-                                    }}
-                                >
-                                    <Avatar
-                                        sx={{
-                                            mr: 2,
-                                            bgcolor: getPlanoColor(contract.plano) + '.main',
-                                            color: 'white',
-                                        }}
+                {loading && contracts.length === 0 ? (
+                    <Box p={3}>
+                        <Typography color="text.secondary">Carregando contratos...</Typography>
+                    </Box>
+                ) : filteredContracts.length === 0 ? (
+                    <Box p={3}>
+                        <Typography color="text.secondary">
+                            {searchTerm
+                                ? `Nenhum contrato encontrado para "${searchTerm}".`
+                                : "Nenhum contrato cadastrado."}
+                        </Typography>
+                    </Box>
+                ) : (
+                    <List>
+                        {filteredContracts.map((contract, index) => {
+                            const formattedCpf = formatCpf(contract.cpf);
+                            const formattedPhone = formatPhone(contract.phone);
+
+                            return (
+                                <React.Fragment key={contract.id}>
+                                    <ListItem
+                                        sx={{ py: 2, cursor: 'pointer' }}
+                                        onClick={() => navigate(`/gerenciarContratos/criarContrato/${contract.id}`)}
                                     >
-                                        {contract.nomeAssinante.charAt(0).toUpperCase()}
-                                    </Avatar>
-                                    
-                                    <ListItemText
-                                        primary={
-                                            <Box display="flex" alignItems="center" gap={1}>
-                                                <Typography variant="h6" component="span">
-                                                    {contract.nomeAssinante}
-                                                </Typography>
-                                                <Chip
-                                                    label={contract.plano}
-                                                    color={getPlanoColor(contract.plano)}
-                                                    size="small"
-                                                />
-                                                <Chip
-                                                    label={contract.status}
-                                                    color={getStatusColor(contract.status)}
-                                                    size="small"
-                                                    variant="outlined"
-                                                />
-                                            </Box>
-                                        }
-                                        secondary={
-                                            <Box mt={1}>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    CPF: {contract.cpf} • Tel: {contract.telefone}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Contratado em: {new Date(contract.dataContratacao).toLocaleDateString('pt-BR')} • 
-                                                    Valor: {formatCurrency(contract.valorMensal)} • 
-                                                    Dependentes: {contract.dependentes}
-                                                </Typography>
-                                            </Box>
-                                        }
-                                    />
-                                    
-                                    <ListItemSecondaryAction>
-                                        <Box display="flex" gap={1}>
-                                            <IconButton
-                                                edge="end"
-                                                onClick={() => {/* Ver detalhes */}}
-                                            >
-                                                <Visibility />
-                                            </IconButton>
-                                            
-                                            {contract.status === "Ativo" && (
-                                                <>
-                                                    <Button
-                                                        size="small"
-                                                        color="warning"
-                                                        onClick={() => handleChangeStatus(contract.id, "Suspenso")}
-                                                    >
-                                                        Suspender
-                                                    </Button>
-                                                    <Button
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() => handleChangeStatus(contract.id, "Cancelado")}
-                                                    >
-                                                        Cancelar
-                                                    </Button>
-                                                </>
-                                            )}
-                                            
-                                            {contract.status === "Suspenso" && (
-                                                <Button
-                                                    size="small"
-                                                    color="success"
-                                                    onClick={() => handleChangeStatus(contract.id, "Ativo")}
+                                        <ListItemText
+                                            primary={
+                                                <Box
+                                                    display="flex"
+                                                    alignItems="center"
+                                                    justifyContent="space-between"
+                                                    flexWrap="wrap"
+                                                    gap={1.5}
                                                 >
-                                                    Reativar
-                                                </Button>
-                                            )}
-                                        </Box>
-                                    </ListItemSecondaryAction>
-                                </ListItem>
-                                {index < filteredContracts.length - 1 && <Divider />}
-                            </React.Fragment>
-                        ))
-                    )}
-                </List>
+                                                    <Typography variant="h6" component="span">
+                                                        {contract.clientName}
+                                                    </Typography>
+                                                    <Chip
+                                                        label={contract.status}
+                                                        color={contract.status === "Ativo" ? "success" : "default"}
+                                                        size="small"
+                                                    />
+                                                </Box>
+                                            }
+                                            secondary={
+                                                <Box mt={1} display="flex" flexDirection="column" gap={0.5}>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Contrato #{contract.id} • Dependentes: {contract.dependentCount}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Vigência: {formatDate(contract.startDate)} — {formatDate(contract.endDate)}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Valor total: {formatCurrency(contract.value)}
+                                                        {contract.monthlyFee
+                                                            ? ` • Mensalidade: ${formatCurrency(contract.monthlyFee)}`
+                                                            : ""}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {formattedCpf ? `CPF: ${formattedCpf}` : "CPF não informado"}
+                                                        {formattedPhone ? ` • Tel: ${formattedPhone}` : ""}
+                                                    </Typography>
+                                                    {contract.planName && (
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            Plano funerário: {contract.planName}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                            }
+                                        />
+                                    </ListItem>
+                                    {index < filteredContracts.length - 1 && <Divider component="li" />}
+                                </React.Fragment>
+                            );
+                        })}
+                    </List>
+                )}
             </Card>
 
-            {/* Dialog para novo contrato */}
-            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-                <DialogTitle>Novo Contrato de Cliente</DialogTitle>
-                <DialogContent>
-                    <Box display="flex" flexDirection="column" gap={2} mt={1}>
-                        <TextField
-                            label="Nome do Assinante"
-                            name="nomeAssinante"
-                            value={newContract.nomeAssinante}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                        />
-                        
-                        <TextField
-                            label="CPF"
-                            name="cpf"
-                            value={newContract.cpf}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                            placeholder="000.000.000-00"
-                        />
-                        
-                        <TextField
-                            label="Telefone"
-                            name="telefone"
-                            value={newContract.telefone}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                            placeholder="(00) 00000-0000"
-                        />
-                        
-                        <TextField
-                            select
-                            label="Plano"
-                            name="plano"
-                            value={newContract.plano}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                        >
-                            {contractTypes.map((type) => (
-                                <MenuItem key={type} value={type}>
-                                    {type}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                        
-                        <TextField
-                            label="Valor Mensal (R$)"
-                            name="valorMensal"
-                            type="number"
-                            value={newContract.valorMensal}
-                            onChange={handleInputChange}
-                            fullWidth
-                            InputProps={{
-                                inputProps: { min: 0, step: 0.01 }
-                            }}
-                        />
-                        
-                        <TextField
-                            label="Número de Dependentes"
-                            name="dependentes"
-                            type="number"
-                            value={newContract.dependentes}
-                            onChange={handleInputChange}
-                            fullWidth
-                            InputProps={{
-                                inputProps: { min: 0 }
-                            }}
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancelar</Button>
-                    <Button
-                        onClick={handleCreateContract}
-                        variant="contained"
-                        disabled={!newContract.nomeAssinante || !newContract.cpf || !newContract.telefone}
-                    >
-                        Criar Contrato
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <AccessibilityPanel />
         </Container>
     );
 }

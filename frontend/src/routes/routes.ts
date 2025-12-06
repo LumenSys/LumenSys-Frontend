@@ -2,14 +2,16 @@ export const routes =
     {
             LANDING:'/',
             LOGIN:'/login',
-            USERSIGNUP:'/usersignup',
+            USERSIGNUP:'/userSignup',
             DASHBOARD:'/dashboard',
-            MANAGE_PLANS:'/gerenciarplanos',
-            CADASTRO_EMPRESA: "/cadastroempresa",
-            LIST_COMPANIES: "/listaempresas",
+            MANAGE_PLANS:'/gerenciarPlanos',
+            CADASTRO_EMPRESA: "/cadastroEmpresa",
+            LIST_COMPANIES: "/listaEmpresas",
             SERVICOS: "/servicos",
             CONTRATOS: "/contratos",
-            PLANOS_FUNERARIOS: "/planosfunerarios",
-            GERENCIAR_CONTRATOS: "/gerenciarcontratos",
-            CRIAR_CONTRATO: "/criarcontrato"
+            PLANOS_FUNERARIOS: "/gerenciarPlanos/planosFunerarios",
+        GERENCIAR_CONTRATOS: "/gerenciarContratos",
+        CRIAR_CONTRATO: "/gerenciarContratos/criarContrato",
+        PERFIL_EMPRESA: "/perfilEmpresa",
+        CADASTRO_CLIENTE: "/gerenciarContratos/cadastrarCliente",
     }
