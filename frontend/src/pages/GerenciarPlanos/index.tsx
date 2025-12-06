@@ -1,9 +1,12 @@
-import React, { useState } from "react";
-import { Search, Plus, Edit2, Eye, Filter, Download, Settings, Users, Calendar, DollarSign } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Search, Plus, Edit2, Eye, Filter, Download, Settings, Users, Calendar, DollarSign, AlertCircle, RefreshCcw } from 'lucide-react';
 import PageLayout from '../../components/PageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import StatsCard from '../../components/StatsCard';
+import AccessibilityPanel from "../../components/AccessibilityPanel";
+import ApiService from '../../services/apiService';
+import { useNavigate } from 'react-router-dom';
 
 interface Plano {
   id: number;
@@ -18,72 +21,77 @@ interface Plano {
   totalClientes: number;
   dataCriacao: string;
 }
+ 
+// Helpers para normalizar dados vindos do backend
+function normalizePlano(raw: any): Plano {
+  const id = Number(raw?.id ?? raw?.planId ?? raw?.funeralPlansId);
+  const nome = String(raw?.name ?? raw?.nome ?? 'Plano sem nome');
+  const descricao = String(raw?.description ?? raw?.descricao ?? '');
+  const valorAnual = Number(raw?.annualValue ?? raw?.valorAnual ?? 0);
+  const adicionalDependente = Number(raw?.dependentAdditional ?? raw?.adicionalDependente ?? 0);
+  const foraDeAr = Boolean(raw?.outOfArea ?? raw?.foraDeAr ?? false);
+  const maxDependente = Number(raw?.maxDependents ?? raw?.maxDependente ?? 0);
+  const idadeMaxima = Number(raw?.maxAge ?? raw?.idadeMaxima ?? 0);
+  const status: Plano['status'] = (String(raw?.status ?? 'ativo') as any);
+  const dataCriacao = String(raw?.createdAt ?? raw?.dataCriacao ?? new Date().toLocaleDateString('pt-BR'));
+  const totalClientes = Number(raw?.clientsCount ?? raw?.totalClientes ?? 0);
 
-const planosExemplo: Plano[] = [
-  {
-    id: 1,
-    nome: 'Plano Básico',
-    descricao: 'Cobertura essencial para necessidades básicas',
-    valorAnual: 1200.00,
-    foraDeAr: false,
-    maxDependente: 2,
-    idadeMaxima: 65,
-    adicionalDependente: 150.00,
-    status: 'ativo',
-    totalClientes: 124,
-    dataCriacao: '15/01/2024'
-  },
-  {
-    id: 2,
-    nome: 'Plano Premium',
-    descricao: 'Cobertura completa com benefícios adicionais',
-    valorAnual: 2500.00,
-    foraDeAr: true,
-    maxDependente: 4,
-    idadeMaxima: 75,
-    adicionalDependente: 200.00,
-    status: 'ativo',
-    totalClientes: 89,
-    dataCriacao: '10/02/2024'
-  },
-  {
-    id: 3,
-    nome: 'Plano Família',
-    descricao: 'Ideal para famílias grandes',
-    valorAnual: 3200.00,
-    foraDeAr: true,
-    maxDependente: 6,
-    idadeMaxima: 80,
-    adicionalDependente: 180.00,
-    status: 'ativo',
-    totalClientes: 67,
-    dataCriacao: '05/03/2024'
-  },
-  {
-    id: 4,
-    nome: 'Plano Jovem',
-    descricao: 'Especial para pessoas até 35 anos',
-    valorAnual: 800.00,
-    foraDeAr: false,
-    maxDependente: 1,
-    idadeMaxima: 35,
-    adicionalDependente: 120.00,
-    status: 'rascunho',
-    totalClientes: 0,
-    dataCriacao: '20/03/2024'
-  }
-];
+  return { id, nome, descricao, valorAnual, foraDeAr, maxDependente, idadeMaxima, adicionalDependente, status, totalClientes, dataCriacao };
+}
 
 export default function GerenciarPlanos() {
+  const api = useMemo(() => ApiService(), []);
+  const navigate = useNavigate();
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ativo' | 'inativo' | 'rascunho'>('todos');
+  const [planos, setPlanos] = useState<Plano[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const planosFiltrados = planosExemplo.filter((plano) => {
+  const hasFetchedRef = useRef(false);
+
+  // Se houver um id na querystring (?id=123), ir direto para edição
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const idParam = params.get('id');
+      const idNum = Number(idParam);
+      if (Number.isFinite(idNum) && idNum > 0) {
+        navigate(`/gerenciarPlanos/planosFunerarios/${idNum}`);
+      }
+    } catch {}
+  }, [navigate]);
+
+  useEffect(() => {
+    const fetchPlanos = async () => {
+      if (hasFetchedRef.current) return; // evita chamadas duplicadas (React 18 StrictMode)
+      hasFetchedRef.current = true;
+      setLoading(true);
+      setError(null);
+      try {
+        const resp = await api.get('api/v1/FuneralPlans');
+        const payload = Array.isArray(resp.data) ? resp.data : (Array.isArray(resp.data?.data) ? resp.data.data : []);
+        const list = (payload as any[]).map(normalizePlano).filter(p => Number.isFinite(p.id));
+        setPlanos(list);
+      } catch (err: any) {
+        console.error('Erro ao buscar planos:', err);
+        const msg = err?.response?.data?.message || err.message || 'Não foi possível carregar os planos.';
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlanos();
+  }, [api]);
+
+  const planosFiltrados = useMemo(() => planos.filter((plano) => {
     const matchesBusca = plano.nome.toLowerCase().includes(busca.toLowerCase()) ||
                         plano.descricao.toLowerCase().includes(busca.toLowerCase());
     const matchesStatus = filtroStatus === 'todos' || plano.status === filtroStatus;
     return matchesBusca && matchesStatus;
-  });
+  }), [planos, busca, filtroStatus]);
+
+  const planosAtivosList = useMemo(() => planos.filter(plano => plano.status === 'ativo'), [planos]);
 
   const getStatusBadge = (status: string) => {
     const statusStyles = {
@@ -112,10 +120,10 @@ export default function GerenciarPlanos() {
   };
 
   // Estatísticas
-  const totalPlanos = planosExemplo.length;
-  const planosAtivos = planosExemplo.filter(p => p.status === 'ativo').length;
-  const totalClientes = planosExemplo.reduce((sum, p) => sum + p.totalClientes, 0);
-  const receitaTotal = planosExemplo.reduce((sum, p) => sum + (p.valorAnual * p.totalClientes), 0);
+  const totalPlanos = planos.length;
+  const planosAtivos = planosAtivosList.length;
+  const totalClientes = planosAtivosList.reduce((sum, p) => sum + p.totalClientes, 0);
+  const receitaTotal = planosAtivosList.reduce((sum, p) => sum + (p.valorAnual * p.totalClientes), 0);
 
   const statsData = [
     {
@@ -148,6 +156,10 @@ export default function GerenciarPlanos() {
     }
   ];
 
+  function loadPlanos(): void {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <PageLayout
       title="Gerenciar Planos"
@@ -164,13 +176,21 @@ export default function GerenciarPlanos() {
             variant="primary" 
             icon={Plus} 
             size="md"
-            onClick={() => window.location.href = '/planosfunerarios'}
+            onClick={() => window.location.href = '/gerenciarPlanos/planosFunerarios'}
           >
             Novo Plano
           </Button>
         </div>
       }
     >
+      {error && (
+        <Card>
+          <div className="flex items-center gap-2 text-danger text-sm">
+            <AlertCircle className="w-4 h-4" />
+            {error}
+          </div>
+        </Card>
+      )}
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsData.map((stat, index) => (
@@ -204,51 +224,63 @@ export default function GerenciarPlanos() {
               <option value="rascunho">Rascunhos</option>
             </select>
           </div>
+
+          <Button
+            variant="outline"
+            icon={RefreshCcw}
+            size="md"
+            onClick={loadPlanos}
+            disabled={loading}
+          >
+            {loading ? 'Atualizando...' : 'Atualizar dados'}
+          </Button>
         </div>
       </Card>
 
       {/* Tabela de Planos */}
       <Card padding="none">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-footer">
-            <thead className="bg-footer">
+          <table className="min-w-full divide-y divide-borderPrimary">
+            <thead className="bg-footer sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
                   Plano
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
                   Valor Anual
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
                   Cobertura
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
                   Dependentes
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
-                  Clientes
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-surface divide-y divide-footer">
-              {planosFiltrados.map((plano) => (
-                <tr key={plano.id} className="hover:bg-footer/50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+            <tbody className="bg-surface">
+              {loading ? (
+                <tr>
+                  <td className="px-6 py-6 text-center text-textSecondary" colSpan={6}>Carregando planos...</td>
+                </tr>
+              ) : planosFiltrados.map((plano, idx) => (
+                <tr key={plano.id} className={`${idx % 2 === 0 ? 'bg-background' : 'bg-surface'} hover:bg-footer/60 transition-colors`}>
+                  <td className="px-6 py-3 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-textPrimary">{plano.nome}</div>
                       <div className="text-sm text-textSecondary">{plano.descricao}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-3 whitespace-nowrap">
                     {getStatusBadge(plano.status)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-3 whitespace-nowrap">
                     <div className="text-sm font-semibold text-textPrimary">
                       {plano.valorAnual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </div>
@@ -256,10 +288,10 @@ export default function GerenciarPlanos() {
                       +{plano.adicionalDependente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/dep.
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-3 whitespace-nowrap">
                     {getCoberturaBadge(plano.foraDeAr)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-3 whitespace-nowrap">
                     <div className="text-sm text-textPrimary">
                       Máx: {plano.maxDependente}
                     </div>
@@ -267,16 +299,9 @@ export default function GerenciarPlanos() {
                       Até {plano.idadeMaxima} anos
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-textPrimary">{plano.totalClientes}</div>
-                    <div className="text-xs text-textSecondary">clientes ativos</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/gerenciarPlanos/planosFunerarios/${plano.id}`)}>
                         <Edit2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -287,7 +312,7 @@ export default function GerenciarPlanos() {
           </table>
         </div>
 
-        {planosFiltrados.length === 0 && (
+        {!loading && planosFiltrados.length === 0 && (
           <div className="text-center py-12">
             <div className="text-textSecondary">
               {busca ? `Nenhum plano encontrado para "${busca}"` : 'Nenhum plano encontrado'}
@@ -296,7 +321,7 @@ export default function GerenciarPlanos() {
         )}
 
         {/* Rodapé com informações */}
-        <div className="px-6 py-4 border-t border-footer bg-footer/30">
+        <div className="px-6 py-4 border-t border-borderPrimary bg-footer/30">
           <div className="flex items-center justify-between text-sm text-textSecondary">
             <span>
               Mostrando {planosFiltrados.length} de {totalPlanos} planos
@@ -307,6 +332,12 @@ export default function GerenciarPlanos() {
           </div>
         </div>
       </Card>
+      {error && (
+        <Card className="bg-danger/10 border-danger/20">
+          <p className="text-sm text-danger">⚠️ {error}</p>
+        </Card>
+      )}
+     <AccessibilityPanel />
     </PageLayout>
   );
 }
